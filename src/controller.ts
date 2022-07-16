@@ -96,3 +96,40 @@ class RandomController extends Controller {
 	rightActive(): boolean { return (Math.random() < RandomController.#RIGHT_CHANCE); }
 	jumpActive():  boolean { return (Math.random() < RandomController.#JUMP_CHANCE); }
 }
+
+/**
+ * A `Controller` implementation that merges multiple other `Controller`s together.
+ */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+class MergedController extends Controller {
+	readonly controllers: readonly Controller[];
+
+	constructor(controllers: readonly Controller[]);
+	constructor(controller: Controller, ...otherControllers: readonly Controller[]);
+	constructor(
+		controllersOrController: (readonly Controller[] | Controller),
+		...otherControllers: readonly Controller[]
+	) {
+		super();
+
+		if(controllersOrController instanceof Array) {
+			// cloning array
+			this.controllers = [...controllersOrController];
+			return;
+		}
+
+		this.controllers = [controllersOrController, ...otherControllers];
+	}
+
+	leftActive(): boolean {
+		return this.controllers.some((controller: Controller) => controller.leftActive());
+	}
+
+	rightActive(): boolean {
+		return this.controllers.some((controller: Controller) => controller.rightActive());
+	}
+
+	jumpActive(): boolean {
+		return this.controllers.some((controller: Controller) => controller.jumpActive());
+	}
+}
