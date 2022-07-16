@@ -110,9 +110,13 @@ class Vector2D {
 		return new Vector2D(0, 0);
 	}
 
+	setXdYd(xd: number, yd: number) {
+		this.xd = xd;
+		this.yd = yd;
+	}
+
 	assign(other: Readonly<Vector2D>) {
-		this.xd = other.xd;
-		this.yd = other.yd;
+		this.setXdYd(other.xd, other.yd);
 	}
 
 	static sum(vectors: Iterable<Readonly<Vector2D>>): Vector2D {
