@@ -98,3 +98,27 @@ _b = RandomController;
 _RandomController_LEFT_CHANCE = { value: 0.4 };
 _RandomController_RIGHT_CHANCE = { value: 0.4 };
 _RandomController_JUMP_CHANCE = { value: 0.1 };
+/**
+ * A `Controller` implementation that merges multiple other `Controller`s together.
+ */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+class MergedController extends Controller {
+    constructor(controllersOrController, ...otherControllers) {
+        super();
+        if (controllersOrController instanceof Array) {
+            // cloning array
+            this.controllers = [...controllersOrController];
+            return;
+        }
+        this.controllers = [controllersOrController, ...otherControllers];
+    }
+    leftActive() {
+        return this.controllers.some((controller) => controller.leftActive());
+    }
+    rightActive() {
+        return this.controllers.some((controller) => controller.rightActive());
+    }
+    jumpActive() {
+        return this.controllers.some((controller) => controller.jumpActive());
+    }
+}

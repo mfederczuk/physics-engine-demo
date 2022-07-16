@@ -1,27 +1,4 @@
 "use strict";
-// TODO: maybe instead of deleting forces completely, just mark them as deleted/removed/disabled? like this we would be
-//       able to display old forces in the debug text.
-//       the jump force, for example, is literally only displayed for a single frame, don't think i need to explicitly
-//       say that it's pretty hard to catch that -- would be better to display the old/inactive force so that it can
-//       still be seen retroactively
-var ForceType;
-(function (ForceType) {
-    ForceType["GRAVITY"] = "gravity";
-    ForceType["LEFT"] = "left";
-    ForceType["RIGHT"] = "right";
-    ForceType["JUMP"] = "jump";
-    ForceType["DEBUG"] = "[debug]";
-})(ForceType || (ForceType = {}));
-class Entity {
-    constructor(boundingBox, mass, controller = new DummyController()) {
-        this.velocity = new Vector2D();
-        this.forces = new Map();
-        this.noclip = false; // dunno why i added this, seemed like fun lol
-        this.boundingBox = boundingBox;
-        this.mass = mass;
-        this.controller = controller;
-    }
-}
 class State {
     constructor() {
         this.gravity = new Vector2D(0, 0.5);
@@ -36,38 +13,28 @@ State.SUBJECT_SIZE = 75;
 function updateEntity(state, entity) {
     // noclip & gravity
     if (!(entity.noclip)) {
-        entity.forces.set(ForceType.GRAVITY, state.gravity);
+        entity.forces.putNotIfDisabled(ForceType.GRAVITY, state.gravity);
     }
     else {
-        entity.forces.delete(ForceType.GRAVITY);
+        entity.forces.disable(ForceType.GRAVITY);
     }
+    entity.forces.disable(ForceType.LEFT, ForceType.RIGHT, ForceType.JUMP);
     // manual movement (left, right & jump) is only possible when grounded
     // TODO: air (double, triple, ...) jumps?
     if ((entity.boundingBox.y + entity.boundingBox.height) >= state.bounds.height) {
         // TODO: gravity should influence in which direction the manual movement vectors are pointed to
         if (entity.controller.leftActive()) {
-            entity.forces.set(ForceType.LEFT, new Vector2D(-(state.manualMovementSpeed), 0));
-        }
-        else {
-            entity.forces.delete(ForceType.LEFT);
+            entity.forces.put(ForceType.LEFT, new Vector2D(-(state.manualMovementSpeed), 0));
         }
         if (entity.controller.rightActive()) {
-            entity.forces.set(ForceType.RIGHT, new Vector2D(state.manualMovementSpeed, 0));
-        }
-        else {
-            entity.forces.delete(ForceType.RIGHT);
+            entity.forces.put(ForceType.RIGHT, new Vector2D(state.manualMovementSpeed, 0));
         }
         if (entity.controller.jumpActive()) {
-            entity.forces.set(ForceType.JUMP, new Vector2D(0, -(state.jumpSpeed)));
+            entity.forces.put(ForceType.JUMP, new Vector2D(0, -(state.jumpSpeed)));
         }
     }
-    else {
-        entity.forces.delete(ForceType.LEFT);
-        entity.forces.delete(ForceType.RIGHT);
-        entity.forces.delete(ForceType.JUMP);
-    }
     // updating velocity
-    const netForce = Vector2D.sum(entity.forces.values());
+    const netForce = entity.forces.computeNetForce();
     entity.velocity.add(netForce);
     // updating position
     entity.boundingBox.x += entity.velocity.xd;
@@ -97,6 +64,8 @@ function updateEntity(state, entity) {
     // TODO: add terminal velocity
     // if net force is pulling down & entity is grounded: add ground friction
     // TODO: friction on walls and ceilings?
+    // TODO: gravity (or, to be more accurate, the net force that is pulling down) needs to impact the amount of
+    //       friction
     if ((netForce.yd > 0) && ((entity.boundingBox.y + entity.boundingBox.height) >= state.bounds.height)) {
         if (entity.velocity.xd > 0) {
             entity.velocity.xd -= state.frictionRate;
@@ -144,12 +113,16 @@ function drawState(state, context, fps) {
     context.fillText(`yd: ${state.subject.velocity.yd}`, 65, infoTextPosY + (fontSize * 12));
     context.fillText("forces:", 45, infoTextPosY + (fontSize * 14));
     let forceI = 0;
-    state.subject.forces.forEach((force, key) => {
-        context.fillText((key || "unnamed") + ":", 65, infoTextPosY + (fontSize * (15 + (forceI * 3 + 0))));
+    context.save();
+    state.subject.forces.forEach((force, enabled, type) => {
+        // 0.38 taken from Material guidelines: <https://material.io/design/interaction/states.html#disabled>
+        context.fillStyle = (enabled ? "black" : "rgba(0, 0, 0, 0.38)");
+        context.fillText((type || "unnamed") + ":", 65, infoTextPosY + (fontSize * (15 + (forceI * 3 + 0))));
         context.fillText(`xd: ${force.xd}`, 85, infoTextPosY + (fontSize * (15 + (forceI * 3 + 1))));
         context.fillText(`yd: ${force.yd}`, 85, infoTextPosY + (fontSize * (15 + (forceI * 3 + 2))));
         ++forceI;
     });
+    context.restore();
     const fpsText = ((fps >= 0) ? `fps: ${fps}` : "fps: N/A");
     context.fillText(fpsText, canvas.width - 73, 20);
     context.restore();

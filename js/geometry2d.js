@@ -102,7 +102,13 @@ class Vector2D {
     isZero() {
         return ((this.xd === 0) && (this.yd === 0));
     }
+    reverse() {
+        this.xd = -(this.xd);
+        this.yd = -(this.yd);
+    }
     reversed() {
-        return new Vector2D(-(this.xd), -(this.yd));
+        const copy = new Vector2D(this.xd, this.yd);
+        copy.reverse();
+        return copy;
     }
 }

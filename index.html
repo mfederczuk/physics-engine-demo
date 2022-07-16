@@ -4,12 +4,28 @@
 		<meta charset="UTF-8" />
 		<title>Simple Physics/Collision Engine Demo</title>
 		<link rel="stylesheet" href="main.css" />
-		<script type="application/javascript" src="js/geometry2d.js"></script>
 		<script type="application/javascript" src="js/utils.js"></script>
+		<script type="application/javascript" src="js/geometry2d.js"></script>
 		<script type="application/javascript" src="js/controller.js"></script>
+		<script type="application/javascript" src="js/entity.js"></script>
 		<script type="application/javascript" src="js/main.js"></script>
 	</head>
 	<body>
-		<canvas id="main-canvas" width="1000" height="1000"></canvas>
+		<div id="controls-guide">
+			<table>
+				<tr>
+					<td>Left</td>
+					<td>Right</td>
+					<td>Jump</td>
+				</tr>
+				<tr>
+					<td><img src="assets/key_a.png" alt="[A]" /></td>
+					<td><img src="assets/key_d.png" alt="[D]" /></td>
+					<td><img src="assets/key_space.png" alt="[Spacebar]" /></td>
+				</tr>
+			</table>
+		</div>
+
+		<canvas id="main-canvas" style="z-index: -1;" width="1000" height="1000"></canvas>
 	</body>
 </html>
