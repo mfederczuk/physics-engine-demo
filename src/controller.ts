@@ -90,7 +90,7 @@ class WebKeyboardController extends Controller {
 class RandomController extends Controller {
 	static readonly #LEFT_CHANCE  = 0.4;
 	static readonly #RIGHT_CHANCE = 0.4;
-	static readonly #JUMP_CHANCE  = 0.1;
+	static readonly #JUMP_CHANCE  = 0.025;
 
 	leftActive():  boolean { return (Math.random() < RandomController.#LEFT_CHANCE); }
 	rightActive(): boolean { return (Math.random() < RandomController.#RIGHT_CHANCE); }
