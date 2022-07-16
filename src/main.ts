@@ -85,7 +85,9 @@ function updateEntity(state: State, entity: Entity) {
 		}
 	}
 
-	// TODO: add air resistance
+	// FIXME: should the friction and drag calculation happen BEFORE adding the velocity to the position?
+
+	// TODO: add air resistance (proper name is "drag")
 	//       good idea to add a `fluids: Fluid[]` (or something like this) attribute to the state? every fluid would
 	//       have it's own resistance this way would be easy to add water and such
 
@@ -169,6 +171,7 @@ function drawState(state: Readonly<State>, context: CanvasRenderingContext2D, fp
 	context.fillText(`xd: ${state.subject.velocity.xd}`,       65, infoTextPosY + (fontSize * 11));
 	context.fillText(`yd: ${state.subject.velocity.yd}`,       65, infoTextPosY + (fontSize * 12));
 
+	// TODO: draw forces as actual vectors (i.e.: arrows)?
 	context.fillText("forces:",                                45, infoTextPosY + (fontSize * 14));
 	let forceI = 0;
 	context.save();
