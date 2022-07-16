@@ -47,16 +47,23 @@ function updateEntity(state: State, entity: Entity) {
 
 	entity.forces.disable(ForceType.LEFT, ForceType.RIGHT, ForceType.JUMP);
 
-	// manual movement (left, right & jump) is only possible when grounded
+	// manual movement (left, right & jump) is only possible when grounded or when there is
+	// no gravity (TODO: change this? mostly just here for testing right now)
 	// TODO: air (double, triple, ...) jumps?
 	// FIXME: this grounded check is wrong (needs to take gravity into consideration - though don't take the global
 	//        gravity, use the gravity of the entity)
-	if((entity.boundingBox.y + entity.boundingBox.height) >= state.bounds.height) {
+	// TODO: if noclip is active there should be different controls? up/down/left/right that are always available
+	//       without being grounded?
+	if(((entity.boundingBox.y + entity.boundingBox.height) >= state.bounds.height) ||
+	   !(entity.forces.isEnabled(ForceType.GRAVITY))) {
+
+		const entityGravity: Vector2D = entity.forces.getOrDefault(ForceType.GRAVITY, state.gravity);
+
 		if(entity.controller.leftActive()) {
 			const leftForce: Vector2D =
 				Vector2D.ofMagnitudeAndDirection(
 					entity.manualMovementSpeed,
-					state.gravity.computeDirection() - 90
+					entityGravity.computeDirection() - 90
 				);
 
 			entity.forces.put(ForceType.LEFT, leftForce);
@@ -66,7 +73,7 @@ function updateEntity(state: State, entity: Entity) {
 			const rightForce: Vector2D =
 				Vector2D.ofMagnitudeAndDirection(
 					entity.manualMovementSpeed,
-					state.gravity.computeDirection() + 90
+					entityGravity.computeDirection() + 90
 				);
 
 			entity.forces.put(ForceType.RIGHT, rightForce);
@@ -76,7 +83,7 @@ function updateEntity(state: State, entity: Entity) {
 			const jumpForce: Vector2D =
 				Vector2D.ofMagnitudeAndDirection(
 					entity.jumpSpeed,
-					state.gravity.computeDirection() + 180
+					entityGravity.computeDirection() + 180
 				);
 
 			entity.forces.put(ForceType.JUMP, jumpForce);
