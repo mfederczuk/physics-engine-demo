@@ -97,7 +97,7 @@ class RandomController extends Controller {
 _b = RandomController;
 _RandomController_LEFT_CHANCE = { value: 0.4 };
 _RandomController_RIGHT_CHANCE = { value: 0.4 };
-_RandomController_JUMP_CHANCE = { value: 0.1 };
+_RandomController_JUMP_CHANCE = { value: 0.025 };
 /**
  * A `Controller` implementation that merges multiple other `Controller`s together.
  */

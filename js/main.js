@@ -7,11 +7,12 @@ class State {
         this.frictionRate = 0.5; // TODO: this should be useless once correctly calculating friction with mass and gravity?
         this.defaultEntityJumpSpeed = 15;
         this.bounds = new Box2D(0, 0, 0, 0);
+        this.otherEntities = [];
         this.subject = this
-            .newEntity(new Box2D(0, 0, State.SUBJECT_SIZE), 50);
+            .newEntity("Subject", new Box2D(0, 0, State.SUBJECT_SIZE), 50);
     }
-    newEntity(boundingBox, mass, manualMovementSpeed = this.defaultEntityManualMovementSpeed, jumpSpeed = this.defaultEntityJumpSpeed, controller = new DummyController()) {
-        return new Entity(boundingBox, mass, manualMovementSpeed, jumpSpeed, controller);
+    newEntity(name, boundingBox, mass, manualMovementSpeed = this.defaultEntityManualMovementSpeed, jumpSpeed = this.defaultEntityJumpSpeed, controller = new DummyController()) {
+        return new Entity(name, boundingBox, mass, manualMovementSpeed, jumpSpeed, controller);
     }
 }
 State.SUBJECT_SIZE = 75;
@@ -99,6 +100,7 @@ function updateEntity(state, entity) {
 }
 function updateState(state) {
     updateEntity(state, state.subject);
+    state.otherEntities.forEach(updateEntity.bind(undefined, state));
 }
 function drawState(state, context, fps) {
     const canvas = context.canvas;
@@ -108,9 +110,28 @@ function drawState(state, context, fps) {
     // draw bounds
     context.fillStyle = "powderblue";
     context.fillRect(state.bounds.x, state.bounds.y, state.bounds.width, state.bounds.height);
+    // draw other entities
+    state.otherEntities.forEach((entity) => {
+        context.save();
+        // border
+        context.fillStyle = "black";
+        context.fillRect(entity.boundingBox.x, entity.boundingBox.y, entity.boundingBox.width, entity.boundingBox.height);
+        // body
+        context.fillStyle = "green";
+        context.fillRect(entity.boundingBox.x + 2, entity.boundingBox.y + 2, entity.boundingBox.width - 4, entity.boundingBox.height - 4);
+        // name
+        context.font = "12px monospace";
+        context.fillStyle = "black";
+        context.fillText(entity.name, entity.boundingBox.x + 4, entity.boundingBox.y + 12);
+        context.restore();
+    });
     // draw subject
-    context.fillStyle = "blue";
+    // border
+    context.fillStyle = "black";
     context.fillRect(state.subject.boundingBox.x, state.subject.boundingBox.y, state.subject.boundingBox.width, state.subject.boundingBox.height);
+    // body
+    context.fillStyle = "blue";
+    context.fillRect(state.subject.boundingBox.x + 1, state.subject.boundingBox.y + 1, state.subject.boundingBox.width - 2, state.subject.boundingBox.height - 2);
     // draw subject info text
     const fontSize = 16;
     context.font = `${fontSize}px monospace`;
@@ -147,6 +168,7 @@ function drawState(state, context, fps) {
 // global state so that it can be manipulated using the browser console
 const state = new State();
 state.subject.controller = new WebKeyboardController(window);
+state.otherEntities.push(state.newEntity("Burt", new Box2D(0, 0, 100, 65), 5, undefined, undefined, new RandomController()), state.newEntity("Mark", new Box2D(0, 0, 50), 5, undefined, undefined, new RandomController()), state.newEntity("Wug", new Box2D(0, 0, 30, 125), 5, undefined, undefined, new RandomController()));
 window.onload = () => {
     const canvas = document.getElementById("main-canvas");
     if (canvas === null) {
