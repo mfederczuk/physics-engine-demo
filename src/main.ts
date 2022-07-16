@@ -15,12 +15,14 @@ class State {
 	constructor() {
 		this.subject = this
 			.newEntity(
+				"Subject",
 				new Box2D(0, 0, State.SUBJECT_SIZE),
 				50
 			);
 	}
 
 	newEntity(
+		name: string,
 		boundingBox: Box2D,
 		mass: number,
 		manualMovementSpeed: number = this.defaultEntityManualMovementSpeed,
@@ -29,6 +31,7 @@ class State {
 		controller: Controller = new DummyController(),
 	): Entity {
 		return new Entity(
+			name,
 			boundingBox,
 			mass,
 			manualMovementSpeed,
@@ -178,6 +181,7 @@ function drawState(state: Readonly<State>, context: CanvasRenderingContext2D, fp
 
 	// draw other entities
 	state.otherEntities.forEach((entity: Entity) => {
+		context.save();
 		// border
 		context.fillStyle = "black";
 		context.fillRect(
@@ -195,6 +199,17 @@ function drawState(state: Readonly<State>, context: CanvasRenderingContext2D, fp
 			entity.boundingBox.width - 4,
 			entity.boundingBox.height - 4,
 		);
+
+		// name
+		context.font = "12px monospace";
+		context.fillStyle = "black";
+		context.fillText(
+			entity.name,
+			entity.boundingBox.x + 4,
+			entity.boundingBox.y + 12,
+		);
+
+		context.restore();
 	});
 
 
@@ -269,9 +284,9 @@ function drawState(state: Readonly<State>, context: CanvasRenderingContext2D, fp
 const state = new State();
 state.subject.controller = new WebKeyboardController(window);
 state.otherEntities.push(
-	state.newEntity(new Box2D(0, 0, 100, 65), 5, undefined, undefined, new RandomController()),
-	state.newEntity(new Box2D(0, 0, 50     ), 5, undefined, undefined, new RandomController()),
-	state.newEntity(new Box2D(0, 0, 30, 125), 5, undefined, undefined, new RandomController()),
+	state.newEntity("Burt", new Box2D(0, 0, 100, 65), 5, undefined, undefined, new RandomController()),
+	state.newEntity("Mark", new Box2D(0, 0, 50     ), 5, undefined, undefined, new RandomController()),
+	state.newEntity("Wug",  new Box2D(0, 0, 30, 125), 5, undefined, undefined, new RandomController()),
 );
 
 window.onload = () => {

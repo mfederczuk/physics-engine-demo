@@ -216,6 +216,7 @@ class ForceCollection {
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 class Entity {
+	         name:                string;
 	readonly boundingBox:         Box2D;
 	         mass:                number; // TODO: mass is currently unused, but will be used for better friction,
 	                                      //       terminal velocity and maybe impact force and others?
@@ -229,6 +230,7 @@ class Entity {
 	         noclip:   boolean         = false; // dunno why i added this, seemed like fun lol
 
 	constructor(
+		name: string,
 		boundingBox: Box2D,
 		mass: number,
 		manualMovementSpeed: number,
@@ -236,6 +238,7 @@ class Entity {
 
 		controller: Controller = new DummyController(),
 	) {
+		this.name                = name;
 		this.boundingBox         = boundingBox;
 		this.mass                = mass;
 		this.manualMovementSpeed = manualMovementSpeed;
