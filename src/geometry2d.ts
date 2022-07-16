@@ -71,6 +71,7 @@ class Box2D {
 		if(typeof(height) === "number") {
 			this.width = (heightOrWidthOrSize as number);
 			this.height = height;
+			return;
 		}
 
 		this.height = (this.width = (heightOrWidthOrSize as number));
