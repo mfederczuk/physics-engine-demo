@@ -8,40 +8,31 @@ enum ForceType {
 }
 
 class ForceCollection {
+	// TODO: add blocking of forces?
+	//       e.g.: instead of the gravity checks in `updateEntity` explicitly check for noclip, before that, we could
+	//       check for noclip and then add a block for gravity:
+	//
+	//           if(entity.noclip) {
+	//               entity.forces.block(ForceType.GRAVITY, /* reason/key = */ "noclip")
+	//           } else {
+	//               // `computeNetForce` won't consider blocked forces
+	//               entity.forces.unblock(ForceType.GRAVITY, /* reason/key = */ "noclip")
+	//           }
+	//
+	//           entity.forces.put(ForceType.GRAVITY, state.gravity)
+	//
+	//       multiple blocks can be active at once, and all blocks have a key so that the don't accidentally unblock
+	//       one another
+	//
+	//       i dunno if there would be a lot of use cases for this, the only one i can think of right now is noclip,
+	//       though this keeps the door open for customization/expandability
+
 	#map: Map<ForceType, [enabled: boolean, force: Vector2D]> = new Map();
 
 	//#region putting & enabling
 
 	put(type: ForceType, force: Vector2D) {
 		this.#map.set(type, [true, force]);
-	}
-
-	putNotIfDisabled(type: ForceType, forceSupplier: () => Vector2D): void;
-	putNotIfDisabled(type: ForceType, force: Vector2D): void;
-	putNotIfDisabled(type: ForceType, forceSupplierOrForce: (Vector2D | (() => Vector2D))) {
-		const forceSupplier: () => Vector2D =
-			((): (() => Vector2D) => {
-				if(typeof(forceSupplierOrForce) === "function") {
-					return forceSupplierOrForce;
-				} else {
-					return () => (forceSupplierOrForce);
-				}
-			})();
-
-		const tuple: ([enabled: boolean, force: Vector2D] | undefined) = this.#map.get(type);
-
-		if(!(tuple instanceof Array)) {
-			this.put(type, forceSupplier());
-			return;
-		}
-
-		const [enabled]: [boolean, Vector2D] = tuple;
-
-		if(!enabled) {
-			return;
-		}
-
-		this.put(type, forceSupplier());
 	}
 
 	enable(type: ForceType, ...otherTypes: ForceType[]) {

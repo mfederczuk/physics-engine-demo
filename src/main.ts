@@ -13,7 +13,7 @@ class State {
 function updateEntity(state: State, entity: Entity) {
 	// noclip & gravity
 	if(!(entity.noclip)) {
-		entity.forces.putNotIfDisabled(ForceType.GRAVITY, state.gravity);
+		entity.forces.put(ForceType.GRAVITY, state.gravity);
 	} else {
 		entity.forces.disable(ForceType.GRAVITY);
 	}
