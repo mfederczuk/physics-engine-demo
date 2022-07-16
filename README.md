@@ -3,7 +3,8 @@
 This is a test/demo/experiment of a very simple physics/collision engine, written in ECMAScript and using HTML5 Canvas'.
 
 The demo is available on GitHub Pages: <https://mfederczuk.github.io/physics-engine-demo>  
-Currently there is only on entity (the "subject") moveable in a box.
+Currently there is only a box with a few entities randomly moving around in it and one entity (the "subject")
+that is (by default) controlled by the user.
 
 Some of the engine's configuration can be adjusted live. Playing around with the console is encouraged. For example:
 

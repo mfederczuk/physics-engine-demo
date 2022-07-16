@@ -10,6 +10,8 @@ class State {
 	readonly bounds: Box2D = new Box2D(0, 0, 0, 0);
 	readonly subject: Entity;
 
+	readonly otherEntities: Entity[] = [];
+
 	constructor() {
 		this.subject = this
 			.newEntity(
@@ -151,6 +153,7 @@ function updateEntity(state: State, entity: Entity) {
 
 function updateState(state: State) {
 	updateEntity(state, state.subject);
+	state.otherEntities.forEach(updateEntity.bind(undefined, state));
 }
 
 function drawState(state: Readonly<State>, context: CanvasRenderingContext2D, fps: number) {
@@ -171,6 +174,28 @@ function drawState(state: Readonly<State>, context: CanvasRenderingContext2D, fp
 		state.bounds.width,
 		state.bounds.height,
 	);
+
+
+	// draw other entities
+	state.otherEntities.forEach((entity: Entity) => {
+		// border
+		context.fillStyle = "black";
+		context.fillRect(
+			entity.boundingBox.x,
+			entity.boundingBox.y,
+			entity.boundingBox.width,
+			entity.boundingBox.height,
+		);
+
+		// body
+		context.fillStyle = "green";
+		context.fillRect(
+			entity.boundingBox.x + 2,
+			entity.boundingBox.y + 2,
+			entity.boundingBox.width - 4,
+			entity.boundingBox.height - 4,
+		);
+	});
 
 
 	// draw subject
@@ -232,6 +257,11 @@ function drawState(state: Readonly<State>, context: CanvasRenderingContext2D, fp
 // global state so that it can be manipulated using the browser console
 const state = new State();
 state.subject.controller = new WebKeyboardController(window);
+state.otherEntities.push(
+	state.newEntity(new Box2D(0, 0, 100, 65), 5, undefined, undefined, new RandomController()),
+	state.newEntity(new Box2D(0, 0, 50     ), 5, undefined, undefined, new RandomController()),
+	state.newEntity(new Box2D(0, 0, 30, 125), 5, undefined, undefined, new RandomController()),
+);
 
 window.onload = () => {
 	const canvas: (HTMLCanvasElement | null) = document.getElementById("main-canvas") as (HTMLCanvasElement | null);
