@@ -75,6 +75,8 @@ function updateEntity(state: State, entity: Entity) {
 
 	// if net force is pulling down & entity is grounded: add ground friction
 	// TODO: friction on walls and ceilings?
+	// TODO: gravity (or, to be more accurate, the net force that is pulling down) needs to impact the amount of
+	//       friction
 	if((netForce.yd > 0) && ((entity.boundingBox.y + entity.boundingBox.height) >= state.bounds.height)) {
 		if(entity.velocity.xd > 0) {
 			entity.velocity.xd -= state.frictionRate;
