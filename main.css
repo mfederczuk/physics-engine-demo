@@ -1,0 +1,22 @@
+body {
+	background-color: #1F1F1F;
+}
+
+#main-canvas {
+	--main-canvas-size: 90%;
+	--main-canvas-edge-space: calc((100% - var(--main-canvas-size)) / 2);
+
+	position: absolute;
+
+	top:  var(--main-canvas-edge-space);
+	left: var(--main-canvas-edge-space);
+
+	width:  var(--main-canvas-size);
+	height: var(--main-canvas-size);
+
+	background-color: #FFFFFF;
+
+	border-color: #7F7F7F;
+	border-style: solid;
+	border-width: 4px;
+}
