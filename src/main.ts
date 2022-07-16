@@ -18,6 +18,8 @@ function updateEntity(state: State, entity: Entity) {
 		entity.forces.disable(ForceType.GRAVITY);
 	}
 
+	entity.forces.disable(ForceType.LEFT, ForceType.RIGHT, ForceType.JUMP);
+
 	// manual movement (left, right & jump) is only possible when grounded
 	// TODO: air (double, triple, ...) jumps?
 	if((entity.boundingBox.y + entity.boundingBox.height) >= state.bounds.height) {
@@ -25,21 +27,15 @@ function updateEntity(state: State, entity: Entity) {
 
 		if(entity.controller.leftActive()) {
 			entity.forces.put(ForceType.LEFT, new Vector2D(-(state.manualMovementSpeed), 0));
-		} else {
-			entity.forces.disable(ForceType.LEFT);
 		}
 
 		if(entity.controller.rightActive()) {
 			entity.forces.put(ForceType.RIGHT, new Vector2D(state.manualMovementSpeed, 0));
-		} else {
-			entity.forces.disable(ForceType.RIGHT);
 		}
 
 		if(entity.controller.jumpActive()) {
 			entity.forces.put(ForceType.JUMP, new Vector2D(0, -(state.jumpSpeed)));
 		}
-	} else {
-		entity.forces.disable(ForceType.LEFT, ForceType.RIGHT, ForceType.JUMP);
 	}
 
 
