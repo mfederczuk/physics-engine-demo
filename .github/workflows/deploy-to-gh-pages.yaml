@@ -1,0 +1,30 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [master]
+
+jobs:
+  deploy-to-github-pages:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Setup Node.js & NPM
+        uses: actions/setup-node@v3
+
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Install NPM Packages
+        run: npm ci
+
+      - name: Build JavaScript Files
+        run: npm exec --package=typescript -- tsc
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: .
+          allow_empty_commit: true
+          commit_message: ${{ github.event.head_commit.message }}
