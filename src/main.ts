@@ -135,13 +135,11 @@ function updateState(state: State) {
 	updateEntity(state, state.subject);
 }
 
-function drawState(state: Readonly<State>, context: CanvasRenderingContext2D) {
-	{
-		const canvas: HTMLCanvasElement = context.canvas;
+function drawState(state: Readonly<State>, context: CanvasRenderingContext2D, fps: number) {
+	const canvas: HTMLCanvasElement = context.canvas;
 
-		// clear canvas
-		context.clearRect(0, 0, canvas.width, canvas.height);
-	}
+	// clear canvas
+	context.clearRect(0, 0, canvas.width, canvas.height);
 
 
 	context.save();
@@ -200,6 +198,10 @@ function drawState(state: Readonly<State>, context: CanvasRenderingContext2D) {
 	});
 
 
+	const fpsText = ((fps >= 0) ? `fps: ${fps}` : "fps: N/A");
+	context.fillText(fpsText, canvas.width - 73, 20);
+
+
 	context.restore();
 }
 
@@ -227,14 +229,28 @@ window.onload = () => {
 
 	// TODO: currently the main loop runs every visual frame, which could be inconsistent and is susceptible to
 	//       frame drops; this should be done using consistent ticks or whatever and then the ready state should be
-	//       queued for the next visual frame
-	const callback = () => {
+	//       queued for the next visual frame (use setInterval for this)
+
+	let frameCount = 0;
+	let lastFps = -1;
+
+	const frameCallback = () => {
 		adjustBounds();
 
 		updateState(state);
-		drawState(state, context);
+		drawState(state, context, lastFps);
+		++frameCount;
 
-		window.requestAnimationFrame(callback);
+		window.requestAnimationFrame(frameCallback);
 	};
-	window.requestAnimationFrame(callback);
+
+	const fpsWatcherCallback = () => {
+		lastFps = frameCount;
+		frameCount = 0;
+	};
+
+	window.requestAnimationFrame(() => {
+		setInterval(fpsWatcherCallback, 1000);
+		frameCallback();
+	});
 };
