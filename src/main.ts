@@ -199,12 +199,23 @@ function drawState(state: Readonly<State>, context: CanvasRenderingContext2D, fp
 
 
 	// draw subject
-	context.fillStyle = "blue";
+
+	// border
+	context.fillStyle = "black";
 	context.fillRect(
 		state.subject.boundingBox.x,
 		state.subject.boundingBox.y,
 		state.subject.boundingBox.width,
 		state.subject.boundingBox.height,
+	);
+
+	// body
+	context.fillStyle = "blue";
+	context.fillRect(
+		state.subject.boundingBox.x + 1,
+		state.subject.boundingBox.y + 1,
+		state.subject.boundingBox.width - 2,
+		state.subject.boundingBox.height - 2,
 	);
 
 
