@@ -22,19 +22,37 @@ function updateEntity(state: State, entity: Entity) {
 
 	// manual movement (left, right & jump) is only possible when grounded
 	// TODO: air (double, triple, ...) jumps?
+	// FIXME: this grounded check is wrong (needs to take gravity into consideration - though don't take the global
+	//        gravity, use the gravity of the entity)
 	if((entity.boundingBox.y + entity.boundingBox.height) >= state.bounds.height) {
-		// TODO: gravity should influence in which direction the manual movement vectors are pointed to
-
 		if(entity.controller.leftActive()) {
-			entity.forces.put(ForceType.LEFT, new Vector2D(-(state.manualMovementSpeed), 0));
+			const leftForce: Vector2D =
+				Vector2D.ofMagnitudeAndDirection(
+					state.manualMovementSpeed,
+					state.gravity.computeDirection() - 90
+				);
+
+			entity.forces.put(ForceType.LEFT, leftForce);
 		}
 
 		if(entity.controller.rightActive()) {
-			entity.forces.put(ForceType.RIGHT, new Vector2D(state.manualMovementSpeed, 0));
+			const rightForce: Vector2D =
+				Vector2D.ofMagnitudeAndDirection(
+					state.manualMovementSpeed,
+					state.gravity.computeDirection() + 90
+				);
+
+			entity.forces.put(ForceType.RIGHT, rightForce);
 		}
 
 		if(entity.controller.jumpActive()) {
-			entity.forces.put(ForceType.JUMP, new Vector2D(0, -(state.jumpSpeed)));
+			const jumpForce: Vector2D =
+				Vector2D.ofMagnitudeAndDirection(
+					state.jumpSpeed,
+					state.gravity.computeDirection() + 180
+				);
+
+			entity.forces.put(ForceType.JUMP, jumpForce);
 		}
 	}
 
@@ -77,6 +95,7 @@ function updateEntity(state: State, entity: Entity) {
 	// TODO: friction on walls and ceilings?
 	// TODO: gravity (or, to be more accurate, the net force that is pulling down) needs to impact the amount of
 	//       friction
+	// FIXME: this grounded check is wrong (needs to take the net force into consideration)
 	if((netForce.yd > 0) && ((entity.boundingBox.y + entity.boundingBox.height) >= state.bounds.height)) {
 		if(entity.velocity.xd > 0) {
 			entity.velocity.xd -= state.frictionRate;
