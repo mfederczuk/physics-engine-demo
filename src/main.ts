@@ -162,8 +162,8 @@ function drawState(state: Readonly<State>, context: CanvasRenderingContext2D, fp
 
 	context.fillText("forces:",                                45, infoTextPosY + (fontSize * 14));
 	let forceI = 0;
-	state.subject.forces.forEach((force: Vector2D, key: string) => {
-		context.fillText((key || "unnamed") + ":",             65, infoTextPosY + (fontSize * (15 + (forceI * 3 + 0))));
+	state.subject.forces.forEach((force: Vector2D, type: ForceType) => {
+		context.fillText((type || "unnamed") + ":",            65, infoTextPosY + (fontSize * (15 + (forceI * 3 + 0))));
 		context.fillText(`xd: ${force.xd}`,                    85, infoTextPosY + (fontSize * (15 + (forceI * 3 + 1))));
 		context.fillText(`yd: ${force.yd}`,                    85, infoTextPosY + (fontSize * (15 + (forceI * 3 + 2))));
 
