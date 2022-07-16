@@ -247,8 +247,14 @@ class Vector2D {
 	}
 
 	reversed(this: Readonly<Vector2D>): Vector2D {
-		const copy = new Vector2D(this.xd, this.yd);
+		const copy = this.copy();
 		copy.reverse();
+		return copy;
+	}
+
+	copy(this: Readonly<Vector2D>): Vector2D {
+		const copy = new Vector2D();
+		copy.assign(this);
 		return copy;
 	}
 }
