@@ -221,6 +221,4 @@ window.onload = () => {
 		setInterval(fpsWatcherCallback, 1000);
 		frameCallback();
 	});
-
-	window.alert("Move the subject left/right with [A]/[D] and jump with [Spacebar]");
 };
