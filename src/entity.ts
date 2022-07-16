@@ -152,9 +152,11 @@ class ForceCollection {
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 class Entity {
-	readonly boundingBox: Box2D;
-	         mass:        number; // TODO: mass is currently unused, but will be used for better friction,
-	                              //       terminal velocity and maybe impact force and others?
+	readonly boundingBox:         Box2D;
+	         mass:                number; // TODO: mass is currently unused, but will be used for better friction,
+	                                      //       terminal velocity and maybe impact force and others?
+	         manualMovementSpeed: number;
+	         jumpSpeed:           number;
 
 	controller: Controller;
 
@@ -162,9 +164,19 @@ class Entity {
 	readonly forces:   ForceCollection = new ForceCollection();
 	         noclip:   boolean         = false; // dunno why i added this, seemed like fun lol
 
-	constructor(boundingBox: Box2D, mass: number, controller: Controller = new DummyController()) {
-		this.boundingBox = boundingBox;
-		this.mass        = mass;
-		this.controller  = controller;
+	constructor(
+		boundingBox: Box2D,
+		mass: number,
+		manualMovementSpeed: number,
+		jumpSpeed: number,
+
+		controller: Controller = new DummyController(),
+	) {
+		this.boundingBox         = boundingBox;
+		this.mass                = mass;
+		this.manualMovementSpeed = manualMovementSpeed;
+		this.jumpSpeed           = jumpSpeed;
+
+		this.controller = controller;
 	}
 }

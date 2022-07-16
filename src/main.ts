@@ -1,13 +1,40 @@
 class State {
 	static readonly SUBJECT_SIZE = 75;
 
+	// TODO: move these into a separate `StateConfig` object?
 	readonly gravity: Vector2D = new Vector2D(0, 0.5);
-	manualMovementSpeed: number = 1;
-	frictionRate: number = 0.5;
-	jumpSpeed: number = 15;
+	defaultEntityManualMovementSpeed: number = 1;
+	frictionRate: number = 0.5; // TODO: this should be useless once correctly calculating friction with mass and gravity?
+	defaultEntityJumpSpeed: number = 15;
 
 	readonly bounds: Box2D = new Box2D(0, 0, 0, 0);
-	readonly subject: Entity = new Entity(new Box2D(0, 0, State.SUBJECT_SIZE), 50);
+	readonly subject: Entity;
+
+	constructor() {
+		this.subject = this
+			.newEntity(
+				new Box2D(0, 0, State.SUBJECT_SIZE),
+				50
+			);
+	}
+
+	newEntity(
+		boundingBox: Box2D,
+		mass: number,
+		manualMovementSpeed: number = this.defaultEntityManualMovementSpeed,
+		jumpSpeed: number = this.defaultEntityJumpSpeed,
+
+		controller: Controller = new DummyController(),
+	): Entity {
+		return new Entity(
+			boundingBox,
+			mass,
+			manualMovementSpeed,
+			jumpSpeed,
+
+			controller,
+		);
+	}
 }
 
 function updateEntity(state: State, entity: Entity) {
@@ -28,7 +55,7 @@ function updateEntity(state: State, entity: Entity) {
 		if(entity.controller.leftActive()) {
 			const leftForce: Vector2D =
 				Vector2D.ofMagnitudeAndDirection(
-					state.manualMovementSpeed,
+					entity.manualMovementSpeed,
 					state.gravity.computeDirection() - 90
 				);
 
@@ -38,7 +65,7 @@ function updateEntity(state: State, entity: Entity) {
 		if(entity.controller.rightActive()) {
 			const rightForce: Vector2D =
 				Vector2D.ofMagnitudeAndDirection(
-					state.manualMovementSpeed,
+					entity.manualMovementSpeed,
 					state.gravity.computeDirection() + 90
 				);
 
@@ -48,7 +75,7 @@ function updateEntity(state: State, entity: Entity) {
 		if(entity.controller.jumpActive()) {
 			const jumpForce: Vector2D =
 				Vector2D.ofMagnitudeAndDirection(
-					state.jumpSpeed,
+					entity.jumpSpeed,
 					state.gravity.computeDirection() + 180
 				);
 
