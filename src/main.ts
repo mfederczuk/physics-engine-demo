@@ -1,9 +1,3 @@
-// TODO: maybe instead of deleting forces completely, just mark them as deleted/removed/disabled? like this we would be
-//       able to display old forces in the debug text.
-//       the jump force, for example, is literally only displayed for a single frame, don't think i need to explicitly
-//       say that it's pretty hard to catch that -- would be better to display the old/inactive force so that it can
-//       still be seen retroactively
-
 class State {
 	static readonly SUBJECT_SIZE = 75;
 
@@ -19,9 +13,9 @@ class State {
 function updateEntity(state: State, entity: Entity) {
 	// noclip & gravity
 	if(!(entity.noclip)) {
-		entity.forces.set(ForceType.GRAVITY, state.gravity);
+		entity.forces.putNotIfDisabled(ForceType.GRAVITY, state.gravity);
 	} else {
-		entity.forces.delete(ForceType.GRAVITY);
+		entity.forces.disable(ForceType.GRAVITY);
 	}
 
 	// manual movement (left, right & jump) is only possible when grounded
@@ -30,29 +24,27 @@ function updateEntity(state: State, entity: Entity) {
 		// TODO: gravity should influence in which direction the manual movement vectors are pointed to
 
 		if(entity.controller.leftActive()) {
-			entity.forces.set(ForceType.LEFT, new Vector2D(-(state.manualMovementSpeed), 0));
+			entity.forces.put(ForceType.LEFT, new Vector2D(-(state.manualMovementSpeed), 0));
 		} else {
-			entity.forces.delete(ForceType.LEFT);
+			entity.forces.disable(ForceType.LEFT);
 		}
 
 		if(entity.controller.rightActive()) {
-			entity.forces.set(ForceType.RIGHT, new Vector2D(state.manualMovementSpeed, 0));
+			entity.forces.put(ForceType.RIGHT, new Vector2D(state.manualMovementSpeed, 0));
 		} else {
-			entity.forces.delete(ForceType.RIGHT);
+			entity.forces.disable(ForceType.RIGHT);
 		}
 
 		if(entity.controller.jumpActive()) {
-			entity.forces.set(ForceType.JUMP, new Vector2D(0, -(state.jumpSpeed)));
+			entity.forces.put(ForceType.JUMP, new Vector2D(0, -(state.jumpSpeed)));
 		}
 	} else {
-		entity.forces.delete(ForceType.LEFT);
-		entity.forces.delete(ForceType.RIGHT);
-		entity.forces.delete(ForceType.JUMP);
+		entity.forces.disable(ForceType.LEFT, ForceType.RIGHT, ForceType.JUMP);
 	}
 
 
 	// updating velocity
-	const netForce: Readonly<Vector2D> = Vector2D.sum(entity.forces.values());
+	const netForce: Readonly<Vector2D> = entity.forces.computeNetForce();
 	entity.velocity.add(netForce);
 
 	// updating position
@@ -162,13 +154,18 @@ function drawState(state: Readonly<State>, context: CanvasRenderingContext2D, fp
 
 	context.fillText("forces:",                                45, infoTextPosY + (fontSize * 14));
 	let forceI = 0;
-	state.subject.forces.forEach((force: Vector2D, type: ForceType) => {
+	context.save();
+	state.subject.forces.forEach((force: Vector2D, enabled: boolean, type: ForceType) => {
+		// 0.38 taken from Material guidelines: <https://material.io/design/interaction/states.html#disabled>
+		context.fillStyle = (enabled ? "black" : "rgba(0, 0, 0, 0.38)");
+
 		context.fillText((type || "unnamed") + ":",            65, infoTextPosY + (fontSize * (15 + (forceI * 3 + 0))));
 		context.fillText(`xd: ${force.xd}`,                    85, infoTextPosY + (fontSize * (15 + (forceI * 3 + 1))));
 		context.fillText(`yd: ${force.yd}`,                    85, infoTextPosY + (fontSize * (15 + (forceI * 3 + 2))));
 
 		++forceI;
 	});
+	context.restore();
 
 
 	const fpsText = ((fps >= 0) ? `fps: ${fps}` : "fps: N/A");
