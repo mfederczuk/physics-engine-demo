@@ -105,6 +105,70 @@ class ForceCollection {
 
 	//#endregion
 
+	//#region getting
+
+	contains(type: ForceType): boolean {
+		return this.#map.has(type);
+	}
+
+	getOrElse<T>(type: ForceType, defaultSupplier: () => T): (Vector2D | T) {
+		const tuple: ([enabled: boolean, force: Vector2D] | undefined) = this.#map.get(type);
+
+		if(!(tuple instanceof Array)) {
+			return defaultSupplier();
+		}
+
+		const [, force]: [boolean, Vector2D] = tuple;
+
+		return force;
+	}
+
+	getOrDefault<T>(type: ForceType, defaultValue: T): (Vector2D | T) {
+		return this.getOrElse(type, () => (defaultValue));
+	}
+
+	get(type: ForceType): Vector2D {
+		return this
+			.getOrElse(
+				type,
+				() => { throw Error(`No such force with type: ${type}`); }
+			);
+	}
+
+	getOrNull(type: ForceType): (Vector2D | null) {
+		return this.getOrDefault(type, null);
+	}
+
+	getOrUndefined(type: ForceType): (Vector2D | undefined) {
+		return this.getOrDefault(type, undefined);
+	}
+
+	isEnabled(type: ForceType): boolean {
+		const tuple: ([enabled: boolean, force: Vector2D] | undefined) = this.#map.get(type);
+
+		if(!(tuple instanceof Array)) {
+			return false;
+		}
+
+		const [enabled]: [boolean, Vector2D] = tuple;
+
+		return enabled;
+	}
+
+	isDisabled(type: ForceType): boolean {
+		const tuple: ([enabled: boolean, force: Vector2D] | undefined) = this.#map.get(type);
+
+		if(!(tuple instanceof Array)) {
+			return false;
+		}
+
+		const [enabled]: [boolean, Vector2D] = tuple;
+
+		return !enabled;
+	}
+
+	//#endregion
+
 	//#region other
 
 	toggle(type: ForceType) {
