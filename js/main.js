@@ -1,36 +1,50 @@
 "use strict";
 class State {
     constructor() {
+        // TODO: move these into a separate `StateConfig` object?
         this.gravity = new Vector2D(0, 0.5);
-        this.manualMovementSpeed = 1;
-        this.frictionRate = 0.5;
-        this.jumpSpeed = 15;
+        this.defaultEntityManualMovementSpeed = 1;
+        this.frictionRate = 0.5; // TODO: this should be useless once correctly calculating friction with mass and gravity?
+        this.defaultEntityJumpSpeed = 15;
         this.bounds = new Box2D(0, 0, 0, 0);
-        this.subject = new Entity(new Box2D(0, 0, State.SUBJECT_SIZE), 50);
+        this.subject = this
+            .newEntity(new Box2D(0, 0, State.SUBJECT_SIZE), 50);
+    }
+    newEntity(boundingBox, mass, manualMovementSpeed = this.defaultEntityManualMovementSpeed, jumpSpeed = this.defaultEntityJumpSpeed, controller = new DummyController()) {
+        return new Entity(boundingBox, mass, manualMovementSpeed, jumpSpeed, controller);
     }
 }
 State.SUBJECT_SIZE = 75;
 function updateEntity(state, entity) {
     // noclip & gravity
     if (!(entity.noclip)) {
-        entity.forces.putNotIfDisabled(ForceType.GRAVITY, state.gravity);
+        entity.forces.put(ForceType.GRAVITY, state.gravity);
     }
     else {
         entity.forces.disable(ForceType.GRAVITY);
     }
     entity.forces.disable(ForceType.LEFT, ForceType.RIGHT, ForceType.JUMP);
-    // manual movement (left, right & jump) is only possible when grounded
+    // manual movement (left, right & jump) is only possible when grounded or when there is
+    // no gravity (TODO: change this? mostly just here for testing right now)
     // TODO: air (double, triple, ...) jumps?
-    if ((entity.boundingBox.y + entity.boundingBox.height) >= state.bounds.height) {
-        // TODO: gravity should influence in which direction the manual movement vectors are pointed to
+    // FIXME: this grounded check is wrong (needs to take gravity into consideration - though don't take the global
+    //        gravity, use the gravity of the entity)
+    // TODO: if noclip is active there should be different controls? up/down/left/right that are always available
+    //       without being grounded?
+    if (((entity.boundingBox.y + entity.boundingBox.height) >= state.bounds.height) ||
+        !(entity.forces.isEnabled(ForceType.GRAVITY))) {
+        const entityGravity = entity.forces.getOrDefault(ForceType.GRAVITY, state.gravity);
         if (entity.controller.leftActive()) {
-            entity.forces.put(ForceType.LEFT, new Vector2D(-(state.manualMovementSpeed), 0));
+            const leftForce = Vector2D.ofMagnitudeAndDirection(entity.manualMovementSpeed, entityGravity.computeDirection() - 90);
+            entity.forces.put(ForceType.LEFT, leftForce);
         }
         if (entity.controller.rightActive()) {
-            entity.forces.put(ForceType.RIGHT, new Vector2D(state.manualMovementSpeed, 0));
+            const rightForce = Vector2D.ofMagnitudeAndDirection(entity.manualMovementSpeed, entityGravity.computeDirection() + 90);
+            entity.forces.put(ForceType.RIGHT, rightForce);
         }
         if (entity.controller.jumpActive()) {
-            entity.forces.put(ForceType.JUMP, new Vector2D(0, -(state.jumpSpeed)));
+            const jumpForce = Vector2D.ofMagnitudeAndDirection(entity.jumpSpeed, entityGravity.computeDirection() + 180);
+            entity.forces.put(ForceType.JUMP, jumpForce);
         }
     }
     // updating velocity
@@ -58,7 +72,8 @@ function updateEntity(state, entity) {
             entity.velocity.yd = 0;
         }
     }
-    // TODO: add air resistance
+    // FIXME: should the friction and drag calculation happen BEFORE adding the velocity to the position?
+    // TODO: add air resistance (proper name is "drag")
     //       good idea to add a `fluids: Fluid[]` (or something like this) attribute to the state? every fluid would
     //       have it's own resistance this way would be easy to add water and such
     // TODO: add terminal velocity
@@ -66,6 +81,7 @@ function updateEntity(state, entity) {
     // TODO: friction on walls and ceilings?
     // TODO: gravity (or, to be more accurate, the net force that is pulling down) needs to impact the amount of
     //       friction
+    // FIXME: this grounded check is wrong (needs to take the net force into consideration)
     if ((netForce.yd > 0) && ((entity.boundingBox.y + entity.boundingBox.height) >= state.bounds.height)) {
         if (entity.velocity.xd > 0) {
             entity.velocity.xd -= state.frictionRate;
@@ -111,6 +127,7 @@ function drawState(state, context, fps) {
     context.fillText("velocity:", 45, infoTextPosY + (fontSize * 10));
     context.fillText(`xd: ${state.subject.velocity.xd}`, 65, infoTextPosY + (fontSize * 11));
     context.fillText(`yd: ${state.subject.velocity.yd}`, 65, infoTextPosY + (fontSize * 12));
+    // TODO: draw forces as actual vectors (i.e.: arrows)?
     context.fillText("forces:", 45, infoTextPosY + (fontSize * 14));
     let forceI = 0;
     context.save();

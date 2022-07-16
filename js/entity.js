@@ -15,6 +15,24 @@ var ForceType;
 })(ForceType || (ForceType = {}));
 class ForceCollection {
     constructor() {
+        // TODO: add blocking of forces?
+        //       e.g.: instead of the gravity checks in `updateEntity` explicitly check for noclip, before that, we could
+        //       check for noclip and then add a block for gravity:
+        //
+        //           if(entity.noclip) {
+        //               entity.forces.block(ForceType.GRAVITY, /* reason/key = */ "noclip")
+        //           } else {
+        //               // `computeNetForce` won't consider blocked forces
+        //               entity.forces.unblock(ForceType.GRAVITY, /* reason/key = */ "noclip")
+        //           }
+        //
+        //           entity.forces.put(ForceType.GRAVITY, state.gravity)
+        //
+        //       multiple blocks can be active at once, and all blocks have a key so that the don't accidentally unblock
+        //       one another
+        //
+        //       i dunno if there would be a lot of use cases for this, the only one i can think of right now is noclip,
+        //       though this keeps the door open for customization/expandability
         _ForceCollection_instances.add(this);
         _ForceCollection_map.set(this, new Map());
         //#endregion
@@ -22,26 +40,6 @@ class ForceCollection {
     //#region putting & enabling
     put(type, force) {
         __classPrivateFieldGet(this, _ForceCollection_map, "f").set(type, [true, force]);
-    }
-    putNotIfDisabled(type, forceSupplierOrForce) {
-        const forceSupplier = (() => {
-            if (typeof (forceSupplierOrForce) === "function") {
-                return forceSupplierOrForce;
-            }
-            else {
-                return () => (forceSupplierOrForce);
-            }
-        })();
-        const tuple = __classPrivateFieldGet(this, _ForceCollection_map, "f").get(type);
-        if (!(tuple instanceof Array)) {
-            this.put(type, forceSupplier());
-            return;
-        }
-        const [enabled] = tuple;
-        if (!enabled) {
-            return;
-        }
-        this.put(type, forceSupplier());
     }
     enable(type, ...otherTypes) {
         __classPrivateFieldGet(this, _ForceCollection_instances, "m", _ForceCollection_enableOne).call(this, type);
@@ -73,6 +71,48 @@ class ForceCollection {
                 __classPrivateFieldGet(this, _ForceCollection_map, "f").set(type, [false, force]);
             }
         });
+    }
+    //#endregion
+    //#region getting
+    contains(type) {
+        return __classPrivateFieldGet(this, _ForceCollection_map, "f").has(type);
+    }
+    getOrElse(type, defaultSupplier) {
+        const tuple = __classPrivateFieldGet(this, _ForceCollection_map, "f").get(type);
+        if (!(tuple instanceof Array)) {
+            return defaultSupplier();
+        }
+        const [, force] = tuple;
+        return force;
+    }
+    getOrDefault(type, defaultValue) {
+        return this.getOrElse(type, () => (defaultValue));
+    }
+    get(type) {
+        return this
+            .getOrElse(type, () => { throw Error(`No such force with type: ${type}`); });
+    }
+    getOrNull(type) {
+        return this.getOrDefault(type, null);
+    }
+    getOrUndefined(type) {
+        return this.getOrDefault(type, undefined);
+    }
+    isEnabled(type) {
+        const tuple = __classPrivateFieldGet(this, _ForceCollection_map, "f").get(type);
+        if (!(tuple instanceof Array)) {
+            return false;
+        }
+        const [enabled] = tuple;
+        return enabled;
+    }
+    isDisabled(type) {
+        const tuple = __classPrivateFieldGet(this, _ForceCollection_map, "f").get(type);
+        if (!(tuple instanceof Array)) {
+            return false;
+        }
+        const [enabled] = tuple;
+        return !enabled;
     }
     //#endregion
     //#region other
@@ -131,12 +171,14 @@ _ForceCollection_map = new WeakMap(), _ForceCollection_instances = new WeakSet()
 };
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 class Entity {
-    constructor(boundingBox, mass, controller = new DummyController()) {
+    constructor(boundingBox, mass, manualMovementSpeed, jumpSpeed, controller = new DummyController()) {
         this.velocity = new Vector2D();
         this.forces = new ForceCollection();
         this.noclip = false; // dunno why i added this, seemed like fun lol
         this.boundingBox = boundingBox;
         this.mass = mass;
+        this.manualMovementSpeed = manualMovementSpeed;
+        this.jumpSpeed = jumpSpeed;
         this.controller = controller;
     }
 }
