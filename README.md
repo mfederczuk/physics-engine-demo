@@ -23,3 +23,10 @@ state.subject.velocity.setXdYd(75, -75) // violently fling the subject into the 
 state.subject.jumpSpeed = 50 // give the subject mad hops
 state.subject.manualMovementSpeed = 50 // make the subject 2 fast 4 u
 ```
+
+---
+
+Special thanks to Nicolae "Xelu" Berbece for the keyboard button icons, which are licensed under [CC0] and can be found
+here: <https://thoseawesomeguys.com/prompts>
+
+[CC0]: <https://creativecommons.org/publicdomain/zero/1.0> "Creative Commons &mdash; CC0 1.0 Universal"
