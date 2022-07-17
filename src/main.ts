@@ -61,13 +61,15 @@ function updateEntity(state: State, entity: Entity) {
 	// TODO: if noclip is active there should be different controls? up/down/left/right that are always available
 	//       without being grounded?
 	if(state.isEntityGrounded(entity) || entity.noclip) {
-		const entityGravity: Vector2D = entity.forces.getOrDefault(ForceType.GRAVITY, state.gravity);
+		const entityNetForceDirection: number = entity.forces
+			.computeNetForce()
+			.computeDirection();
 
 		if(entity.controller.leftActive()) {
 			const leftForce: Vector2D =
 				Vector2D.ofMagnitudeAndDirection(
 					entity.manualMovementSpeed,
-					entityGravity.computeDirection() - 90
+					entityNetForceDirection - 90
 				);
 
 			entity.forces.put(ForceType.LEFT, leftForce);
@@ -77,7 +79,7 @@ function updateEntity(state: State, entity: Entity) {
 			const rightForce: Vector2D =
 				Vector2D.ofMagnitudeAndDirection(
 					entity.manualMovementSpeed,
-					entityGravity.computeDirection() + 90
+					entityNetForceDirection + 90
 				);
 
 			entity.forces.put(ForceType.RIGHT, rightForce);
@@ -87,7 +89,7 @@ function updateEntity(state: State, entity: Entity) {
 			const jumpForce: Vector2D =
 				Vector2D.ofMagnitudeAndDirection(
 					entity.jumpSpeed,
-					entityGravity.computeDirection() + 180
+					entityNetForceDirection + 180
 				);
 
 			entity.forces.put(ForceType.JUMP, jumpForce);
