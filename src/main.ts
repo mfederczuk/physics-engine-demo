@@ -44,13 +44,10 @@ class State {
 
 function updateEntity(state: State, entity: Entity) {
 	// noclip & gravity
-	if(!(entity.noclip)) {
-		entity.forces.put(ForceType.GRAVITY, state.gravity);
-	} else {
-		entity.forces.disable(ForceType.GRAVITY);
-	}
+	entity.forces.setBlocked(entity.noclip, ForceType.GRAVITY, ForceBlockReason.NOCLIP);
+	entity.forces.put(ForceType.GRAVITY, state.gravity);
 
-	entity.forces.disable(ForceType.LEFT, ForceType.RIGHT, ForceType.JUMP);
+	entity.forces.markAsRemoved(ForceType.LEFT, ForceType.RIGHT, ForceType.JUMP);
 
 	// manual movement (left, right & jump) is only possible when grounded or when there is
 	// no gravity (TODO: change this? mostly just here for testing right now)
@@ -60,7 +57,7 @@ function updateEntity(state: State, entity: Entity) {
 	// TODO: if noclip is active there should be different controls? up/down/left/right that are always available
 	//       without being grounded?
 	if(((entity.boundingBox.y + entity.boundingBox.height) >= state.bounds.height) ||
-	   !(entity.forces.isEnabled(ForceType.GRAVITY))) {
+	   !(entity.forces.contains(ForceType.GRAVITY))) {
 
 		const entityGravity: Vector2D = entity.forces.getOrDefault(ForceType.GRAVITY, state.gravity);
 
@@ -260,16 +257,46 @@ function drawState(state: Readonly<State>, context: CanvasRenderingContext2D, fp
 	context.fillText("forces:",                                45, infoTextPosY + (fontSize * 14));
 	let forceI = 0;
 	context.save();
-	state.subject.forces.forEach((force: Vector2D, enabled: boolean, type: ForceType) => {
-		// 0.38 taken from Material guidelines: <https://material.io/design/interaction/states.html#disabled>
-		context.fillStyle = (enabled ? "black" : "rgba(0, 0, 0, 0.38)");
+	state.subject.forces
+		.forcesSequence()
+		.sort((elementA, elementB) => {
+			const aInactive = (elementA.markedAsRemoved || elementA.blocked);
+			const bInactive = (elementB.markedAsRemoved || elementB.blocked);
 
-		context.fillText((type || "unnamed") + ":",            65, infoTextPosY + (fontSize * (15 + (forceI * 3 + 0))));
-		context.fillText(`xd: ${force.xd}`,                    85, infoTextPosY + (fontSize * (15 + (forceI * 3 + 1))));
-		context.fillText(`yd: ${force.yd}`,                    85, infoTextPosY + (fontSize * (15 + (forceI * 3 + 2))));
+			if(!aInactive && bInactive) {
+				return -1;
+			}
 
-		++forceI;
-	});
+			if(aInactive && !bInactive) {
+				return 1;
+			}
+
+			return elementA.type.localeCompare(elementB.type);
+		})
+		.forEach(({ type, force, markedAsRemoved, blocked }) => {
+			// 0.38 taken from Material guidelines: <https://material.io/design/interaction/states.html#disabled>
+			const alpha = ((!markedAsRemoved && !blocked) ? 1 : 0.38);
+
+			context.fillStyle = `rgba(0, 0, 0, ${alpha})`;
+
+			const typeText = (type || "unnamed") + ":";
+
+			context.fillText(typeText,          65,                                      infoTextPosY + (fontSize * (15 + (forceI * 3 + 0))));
+
+			if(blocked) {
+				context.save();
+
+				context.fillStyle = `rgba(127, 0, 0, ${alpha})`;
+				context.fillText("[blocked]",   70 + ((fontSize / 2) * typeText.length), infoTextPosY + (fontSize * (15 + (forceI * 3 + 0))));
+
+				context.restore();
+			}
+
+			context.fillText(`xd: ${force.xd}`, 85,                                      infoTextPosY + (fontSize * (15 + (forceI * 3 + 1))));
+			context.fillText(`yd: ${force.yd}`, 85,                                      infoTextPosY + (fontSize * (15 + (forceI * 3 + 2))));
+
+			++forceI;
+		});
 	context.restore();
 
 

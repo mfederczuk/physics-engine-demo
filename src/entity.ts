@@ -7,132 +7,108 @@ enum ForceType {
 	DEBUG = "[debug]",
 }
 
+enum ForceBlockReason {
+	NOCLIP = "noclip",
+
+	DEBUG = "[debug]",
+}
+
 class ForceCollection {
-	// TODO: add blocking of forces?
-	//       e.g.: instead of the gravity checks in `updateEntity` explicitly check for noclip, before that, we could
-	//       check for noclip and then add a block for gravity:
-	//
-	//           if(entity.noclip) {
-	//               entity.forces.block(ForceType.GRAVITY, /* reason/key = */ "noclip")
-	//           } else {
-	//               // `computeNetForce` won't consider blocked forces
-	//               entity.forces.unblock(ForceType.GRAVITY, /* reason/key = */ "noclip")
-	//           }
-	//
-	//           entity.forces.put(ForceType.GRAVITY, state.gravity)
-	//
-	//       multiple blocks can be active at once, and all blocks have a key so that the don't accidentally unblock
-	//       one another
-	//
-	//       i dunno if there would be a lot of use cases for this, the only one i can think of right now is noclip,
-	//       though this keeps the door open for customization/expandability
+	readonly #forceMap: Map<ForceType, { force: Vector2D; markedAsRemoved: boolean; }> = new Map();
+	readonly #blocks: Map<ForceBlockReason, Set<ForceType>> = new Map();
 
-	#map: Map<ForceType, [enabled: boolean, force: Vector2D]> = new Map();
-
-	//#region putting & enabling
+	//#region putting
 
 	put(type: ForceType, force: Vector2D) {
-		this.#map.set(type, [true, force]);
-	}
-
-	enable(type: ForceType, ...otherTypes: ForceType[]) {
-		this.#enableOne(type);
-		otherTypes.forEach(this.#enableOne.bind(this));
-	}
-	enableAll() {
-		this.#map.forEach(([enabled, force]: [boolean, Vector2D], type: ForceType) => {
-			if(!enabled) {
-				this.put(type, force);
-			}
-		});
-	}
-
-	#enableOne(type: ForceType) {
-		const tuple: ([enabled: boolean, force: Vector2D] | undefined) = this.#map.get(type);
-
-		if(!(tuple instanceof Array)) {
-			return;
-		}
-
-		const [enabled, force]: [boolean, Vector2D] = tuple;
-
-		if(enabled) {
-			return;
-		}
-
-		this.put(type, force);
+		this.#forceMap.set(type, { force, markedAsRemoved: false });
 	}
 
 	//#endregion
 
-	//#region removing & disabling
+	//#region marking as removed
 
-	remove(type: ForceType, ...otherTypes: ForceType[]) {
-		this.#map.delete(type);
-		otherTypes.forEach(this.#map.delete.bind(this.#map));
-	}
-	removeAll() {
-		this.#map.clear();
+	markAsRemoved(type: ForceType, ...otherTypes: ForceType[]) {
+		this.#markOneAsRemoved(type);
+		otherTypes.forEach(this.#markOneAsRemoved.bind(this));
 	}
 
-	disable(type: ForceType, ...otherTypes: ForceType[]) {
-		this.#disableOne(type);
-		otherTypes.forEach(this.#disableOne.bind(this));
-	}
-	disableAll() {
-		this.#map.forEach(([enabled, force]: [boolean, Vector2D], type: ForceType) => {
-			if(enabled) {
-				this.#map.set(type, [false, force]);
-			}
+	markAllAsRemoved() {
+		this.#forceMap.forEach((obj: { readonly force: Vector2D; markedAsRemoved: boolean; }) => {
+			obj.markedAsRemoved = true;
 		});
 	}
 
-	#disableOne(type: ForceType) {
-		const tuple: ([enabled: boolean, force: Vector2D] | undefined) = this.#map.get(type);
+	#markOneAsRemoved(type: ForceType) {
+		const obj: ({ readonly force: Vector2D; markedAsRemoved: boolean; } | undefined) = this.#forceMap.get(type);
 
-		if(!(tuple instanceof Array)) {
+		if(typeof(obj) !== "object") {
 			return;
 		}
 
-		const [enabled, force]: [boolean, Vector2D] = tuple;
-
-		if(!enabled) {
-			return;
-		}
-
-		this.#map.set(type, [false, force]);
+		obj.markedAsRemoved = true;
 	}
 
 	//#endregion
 
-	//#region getting
+	//#region blocking
 
-	contains(type: ForceType): boolean {
-		return this.#map.has(type);
-	}
+	block(type: ForceType, reason: ForceBlockReason) {
+		const types: (Set<ForceType> | undefined) = this.#blocks.get(reason);
 
-	getOrElse<T>(type: ForceType, defaultSupplier: () => T): (Vector2D | T) {
-		const tuple: ([enabled: boolean, force: Vector2D] | undefined) = this.#map.get(type);
-
-		if(!(tuple instanceof Array)) {
-			return defaultSupplier();
+		if(types instanceof Set) {
+			types.add(type);
+			return;
 		}
 
-		const [, force]: [boolean, Vector2D] = tuple;
-
-		return force;
+		this.#blocks.set(reason, new Set([type]));
 	}
 
-	getOrDefault<T>(type: ForceType, defaultValue: T): (Vector2D | T) {
-		return this.getOrElse(type, () => (defaultValue));
+	unblock(type: ForceType, reason: ForceBlockReason) {
+		this.#blocks.get(reason)?.delete(type);
 	}
 
-	get(type: ForceType): Vector2D {
+	unblockAll(reason: ForceBlockReason) {
+		this.#blocks.get(reason)?.clear();
+	}
+
+	setBlocked(blocked: boolean, type: ForceType, reason: ForceBlockReason) {
+		if(blocked) {
+			this.block(type, reason);
+		} else {
+			this.unblock(type, reason);
+		}
+	}
+
+	//#endregion
+
+	//#region queries
+
+	getOrElse<T>(type: ForceType, defaultValueSupplier: (type: ForceType) => T): (Vector2D | T) {
+		const obj: (Readonly<{ force: Vector2D; markedAsRemoved: boolean; }> | undefined) = this.#forceMap.get(type);
+
+		if((typeof(obj) !== "object") || obj.markedAsRemoved) {
+			return defaultValueSupplier(type);
+		}
+
+		for(const blockedTypes of this.#blocks.values()) {
+			if(blockedTypes.has(type)) {
+				return defaultValueSupplier(type);
+			}
+		}
+
+		return obj.force;
+	}
+
+	get(type: ForceType): (Vector2D | never) {
 		return this
 			.getOrElse(
 				type,
 				() => { throw Error(`No such force with type: ${type}`); }
 			);
+	}
+
+	getOrDefault<T>(type: ForceType, defaultValue: T): (Vector2D | T) {
+		return this.getOrElse(type, () => (defaultValue));
 	}
 
 	getOrNull(type: ForceType): (Vector2D | null) {
@@ -143,72 +119,53 @@ class ForceCollection {
 		return this.getOrDefault(type, undefined);
 	}
 
-	isEnabled(type: ForceType): boolean {
-		const tuple: ([enabled: boolean, force: Vector2D] | undefined) = this.#map.get(type);
-
-		if(!(tuple instanceof Array)) {
-			return false;
-		}
-
-		const [enabled]: [boolean, Vector2D] = tuple;
-
-		return enabled;
+	contains(type: ForceType): boolean {
+		return (this.getOrNull(type) !== null);
 	}
 
-	isDisabled(type: ForceType): boolean {
-		const tuple: ([enabled: boolean, force: Vector2D] | undefined) = this.#map.get(type);
+	//#endregion
 
-		if(!(tuple instanceof Array)) {
-			return false;
+	//#region iteration
+
+	forcesSequence(): Sequence<{ type: ForceType; force: Readonly<Vector2D>; markedAsRemoved: boolean; blocked: boolean; }> {
+		const allBlockedTypes: Set<ForceType> = new Set();
+
+		for(const blockedTypes of this.#blocks.values()) {
+			for(const blockedType of blockedTypes) {
+				allBlockedTypes.add(blockedType);
+			}
 		}
 
-		const [enabled]: [boolean, Vector2D] = tuple;
-
-		return !enabled;
+		return Sequence
+			.fromIterable(this.#forceMap.entries())
+			.map(([type, { force, markedAsRemoved }]) => {
+				return {
+					type,
+					force: force.copy(),
+					markedAsRemoved,
+					blocked: allBlockedTypes.has(type),
+				};
+			});
 	}
 
 	//#endregion
 
 	//#region other
 
-	toggle(type: ForceType) {
-		const tuple: ([enabled: boolean, force: Vector2D] | undefined) = this.#map.get(type);
+	computeNetForce(): Vector2D {
+		const allBlockedTypes: Set<ForceType> = new Set();
 
-		if(!(tuple instanceof Array)) {
-			return;
+		for(const blockedTypes of this.#blocks.values()) {
+			for(const blockedType of blockedTypes) {
+				allBlockedTypes.add(blockedType);
+			}
 		}
 
-		const [enabled, force]: [boolean, Vector2D] = tuple;
-
-		this.#map.set(type, [!enabled, force]);
-	}
-
-	computeNetForce(): Vector2D {
-		const forces: Iterable<Readonly<Vector2D>> = [...this.#map.values()]
-			.filter(([enabled]: [boolean, Vector2D]): boolean => enabled)
-			.map(([, force]: [boolean, Vector2D]) => force);
+		const forces: Sequence<Vector2D> = Sequence.fromIterable(this.#forceMap.entries())
+			.filter(([type, { markedAsRemoved }]): boolean => (!markedAsRemoved && !(allBlockedTypes.has(type))))
+			.map(([, { force }]) => (force));
 
 		return Vector2D.sum(forces);
-	}
-
-	//#endregion
-
-	//#region iterating
-
-	forEach(callbackfn: (force: Vector2D, enabled: boolean, type: ForceType) => void) {
-		[...this.#map.entries()]
-			.sort((a, b) => {
-				const aEnabled: boolean = a[1][0];
-				const bEnabled: boolean = b[1][0];
-
-				if( aEnabled && !bEnabled) return -1;
-				if(!aEnabled &&  bEnabled) return  1;
-
-				return 0;
-			})
-			.forEach(([type, [enabled, force]]: [ForceType, [boolean, Vector2D]]) => {
-				callbackfn(force, enabled, type);
-			});
 	}
 
 	//#endregion
