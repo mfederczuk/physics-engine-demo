@@ -10,8 +10,8 @@ Some of the engine's configuration can be adjusted live. Playing around with the
 
 ```javascript
 // gravity can be dynamically changed:
-state.gravity.reverse() // reverses gravity, the subject will float upwards
-state.gravity.changeDirection(45) // changes gravity to be 45° (0° is downwards), the subject will move to the right
+state.gravity.reverse() // reverses gravity, the entities will float upwards
+state.gravity.changeDirection(45) // changes gravity to be 45° (0° is downwards), the entities will be pulled to the lower right corner
 state.gravity.changeMagnitude(5) // changes strength of gravity (default is 0.5), jumping won't gain as much height
 
 state.subject.noclip = true // turns of gravity and bounds collision for the subject
