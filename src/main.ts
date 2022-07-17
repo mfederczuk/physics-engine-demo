@@ -40,6 +40,11 @@ class State {
 			controller,
 		);
 	}
+
+	isEntityGrounded(entity: Entity): boolean {
+		return ((entity.forces.computeNetForce().yd > 0) &&
+		        ((entity.boundingBox.y + entity.boundingBox.height) >= state.bounds.height));
+	}
 }
 
 function updateEntity(state: State, entity: Entity) {
@@ -56,7 +61,7 @@ function updateEntity(state: State, entity: Entity) {
 	//        gravity, use the gravity of the entity)
 	// TODO: if noclip is active there should be different controls? up/down/left/right that are always available
 	//       without being grounded?
-	if(((entity.boundingBox.y + entity.boundingBox.height) >= state.bounds.height) ||
+	if(state.isEntityGrounded(entity) ||
 	   !(entity.forces.contains(ForceType.GRAVITY))) {
 
 		const entityGravity: Vector2D = entity.forces.getOrDefault(ForceType.GRAVITY, state.gravity);
@@ -129,12 +134,12 @@ function updateEntity(state: State, entity: Entity) {
 
 	// TODO: add terminal velocity
 
-	// if net force is pulling down & entity is grounded: add ground friction
+	// ground friction
 	// TODO: friction on walls and ceilings?
 	// TODO: gravity (or, to be more accurate, the net force that is pulling down) needs to impact the amount of
 	//       friction
 	// FIXME: this grounded check is wrong (needs to take the net force into consideration)
-	if((netForce.yd > 0) && ((entity.boundingBox.y + entity.boundingBox.height) >= state.bounds.height)) {
+	if(state.isEntityGrounded(entity)) {
 		if(entity.velocity.xd > 0) {
 			entity.velocity.xd -= state.frictionRate;
 
