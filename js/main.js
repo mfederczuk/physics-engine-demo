@@ -4,7 +4,7 @@ class State {
         // TODO: move these into a separate `StateConfig` object?
         this.gravity = new Vector2D(0, 0.5);
         this.defaultEntityManualMovementSpeed = 1;
-        this.frictionRate = 0.5; // TODO: this should be useless once correctly calculating friction with mass and gravity?
+        this.frictionRate = 0.1; // TODO: this should be useless once correctly calculating friction with mass and gravity?
         this.defaultEntityJumpSpeed = 15;
         this.bounds = new Box2D(0, 0, 0, 0);
         this.otherEntities = [];
@@ -14,39 +14,54 @@ class State {
     newEntity(name, boundingBox, mass, manualMovementSpeed = this.defaultEntityManualMovementSpeed, jumpSpeed = this.defaultEntityJumpSpeed, controller = new DummyController()) {
         return new Entity(name, boundingBox, mass, manualMovementSpeed, jumpSpeed, controller);
     }
+    isEntityGrounded(entity) {
+        const entityNetForce = entity.forces.computeNetForce();
+        const testBox = entity.boundingBox.copy();
+        testBox.x += entityNetForce.xd;
+        testBox.y += entityNetForce.yd;
+        return ((testBox.x < this.bounds.x) ||
+            (testBox.y < this.bounds.y) ||
+            (testBox.computeXEnd() > this.bounds.computeXEnd()) ||
+            (testBox.computeYEnd() > this.bounds.computeYEnd()));
+    }
 }
 State.SUBJECT_SIZE = 75;
 function updateEntity(state, entity) {
     // noclip & gravity
-    if (!(entity.noclip)) {
-        entity.forces.put(ForceType.GRAVITY, state.gravity);
-    }
-    else {
-        entity.forces.disable(ForceType.GRAVITY);
-    }
-    entity.forces.disable(ForceType.LEFT, ForceType.RIGHT, ForceType.JUMP);
-    // manual movement (left, right & jump) is only possible when grounded or when there is
-    // no gravity (TODO: change this? mostly just here for testing right now)
+    entity.forces.setBlocked(entity.noclip, ForceType.GRAVITY, ForceBlockReason.NOCLIP);
+    entity.forces.put(ForceType.GRAVITY, state.gravity);
+    entity.forces.markAsRemoved(ForceType.FRICTION, ForceType.LEFT, ForceType.RIGHT, ForceType.JUMP);
+    // manual movement (left, right & jump) is only possible when grounded or when noclip is on
     // TODO: air (double, triple, ...) jumps?
-    // FIXME: this grounded check is wrong (needs to take gravity into consideration - though don't take the global
-    //        gravity, use the gravity of the entity)
     // TODO: if noclip is active there should be different controls? up/down/left/right that are always available
     //       without being grounded?
-    if (((entity.boundingBox.y + entity.boundingBox.height) >= state.bounds.height) ||
-        !(entity.forces.isEnabled(ForceType.GRAVITY))) {
-        const entityGravity = entity.forces.getOrDefault(ForceType.GRAVITY, state.gravity);
+    if (state.isEntityGrounded(entity) || entity.noclip) {
+        const entityNetForceDirection = entity.forces
+            .computeNetForce()
+            .computeDirection();
         if (entity.controller.leftActive()) {
-            const leftForce = Vector2D.ofMagnitudeAndDirection(entity.manualMovementSpeed, entityGravity.computeDirection() - 90);
+            const leftForce = Vector2D.ofMagnitudeAndDirection(entity.manualMovementSpeed, entityNetForceDirection - 90);
             entity.forces.put(ForceType.LEFT, leftForce);
         }
         if (entity.controller.rightActive()) {
-            const rightForce = Vector2D.ofMagnitudeAndDirection(entity.manualMovementSpeed, entityGravity.computeDirection() + 90);
+            const rightForce = Vector2D.ofMagnitudeAndDirection(entity.manualMovementSpeed, entityNetForceDirection + 90);
             entity.forces.put(ForceType.RIGHT, rightForce);
         }
         if (entity.controller.jumpActive()) {
-            const jumpForce = Vector2D.ofMagnitudeAndDirection(entity.jumpSpeed, entityGravity.computeDirection() + 180);
+            const jumpForce = Vector2D.ofMagnitudeAndDirection(entity.jumpSpeed, entityNetForceDirection + 180);
             entity.forces.put(ForceType.JUMP, jumpForce);
         }
+    }
+    // TODO: add air resistance (proper name is "drag")
+    //       good idea to add a `fluids: Fluid[]` (or something like this) attribute to the state? every fluid would
+    //       have it's own resistance this way would be easy to add water and such
+    // TODO: add terminal velocity
+    // ground friction
+    // TODO: friction on walls and ceilings?
+    if (state.isEntityGrounded(entity)) {
+        const frictionForce = entity.velocity.reversed();
+        frictionForce.multiply(state.frictionRate);
+        entity.forces.put(ForceType.FRICTION, frictionForce);
     }
     // updating velocity
     const netForce = entity.forces.computeNetForce();
@@ -71,30 +86,6 @@ function updateEntity(state, entity) {
         else if ((entity.boundingBox.y + entity.boundingBox.height) > state.bounds.height) {
             entity.boundingBox.y = (state.bounds.height - entity.boundingBox.height);
             entity.velocity.yd = 0;
-        }
-    }
-    // FIXME: should the friction and drag calculation happen BEFORE adding the velocity to the position?
-    // TODO: add air resistance (proper name is "drag")
-    //       good idea to add a `fluids: Fluid[]` (or something like this) attribute to the state? every fluid would
-    //       have it's own resistance this way would be easy to add water and such
-    // TODO: add terminal velocity
-    // if net force is pulling down & entity is grounded: add ground friction
-    // TODO: friction on walls and ceilings?
-    // TODO: gravity (or, to be more accurate, the net force that is pulling down) needs to impact the amount of
-    //       friction
-    // FIXME: this grounded check is wrong (needs to take the net force into consideration)
-    if ((netForce.yd > 0) && ((entity.boundingBox.y + entity.boundingBox.height) >= state.bounds.height)) {
-        if (entity.velocity.xd > 0) {
-            entity.velocity.xd -= state.frictionRate;
-            if (entity.velocity.xd < 0) {
-                entity.velocity.xd = 0;
-            }
-        }
-        else if (entity.velocity.xd < 0) {
-            entity.velocity.xd += state.frictionRate;
-            if (entity.velocity.xd > 0) {
-                entity.velocity.xd = 0;
-            }
         }
     }
 }
@@ -148,16 +139,40 @@ function drawState(state, context, fps) {
     context.fillText("velocity:", 45, infoTextPosY + (fontSize * 10));
     context.fillText(`xd: ${state.subject.velocity.xd}`, 65, infoTextPosY + (fontSize * 11));
     context.fillText(`yd: ${state.subject.velocity.yd}`, 65, infoTextPosY + (fontSize * 12));
+    const subjectNetForce = state.subject.forces.computeNetForce();
     // TODO: draw forces as actual vectors (i.e.: arrows)?
     context.fillText("forces:", 45, infoTextPosY + (fontSize * 14));
+    context.fillText(`xd: ${subjectNetForce.xd}`, 65, infoTextPosY + (fontSize * 15));
+    context.fillText(`yd: ${subjectNetForce.yd}`, 65, infoTextPosY + (fontSize * 16));
     let forceI = 0;
     context.save();
-    state.subject.forces.forEach((force, enabled, type) => {
+    state.subject.forces
+        .forcesSequence()
+        .sort((elementA, elementB) => {
+        const aInactive = (elementA.markedAsRemoved || elementA.blocked);
+        const bInactive = (elementB.markedAsRemoved || elementB.blocked);
+        if (!aInactive && bInactive) {
+            return -1;
+        }
+        if (aInactive && !bInactive) {
+            return 1;
+        }
+        return elementA.type.localeCompare(elementB.type);
+    })
+        .forEach(({ type, force, markedAsRemoved, blocked }) => {
         // 0.38 taken from Material guidelines: <https://material.io/design/interaction/states.html#disabled>
-        context.fillStyle = (enabled ? "black" : "rgba(0, 0, 0, 0.38)");
-        context.fillText((type || "unnamed") + ":", 65, infoTextPosY + (fontSize * (15 + (forceI * 3 + 0))));
-        context.fillText(`xd: ${force.xd}`, 85, infoTextPosY + (fontSize * (15 + (forceI * 3 + 1))));
-        context.fillText(`yd: ${force.yd}`, 85, infoTextPosY + (fontSize * (15 + (forceI * 3 + 2))));
+        const alpha = ((!markedAsRemoved && !blocked) ? 1 : 0.38);
+        context.fillStyle = `rgba(0, 0, 0, ${alpha})`;
+        const typeText = (type || "unnamed") + ":";
+        context.fillText(typeText, 65, infoTextPosY + (fontSize * (18 + (forceI * 3 + 0))));
+        if (blocked) {
+            context.save();
+            context.fillStyle = `rgba(127, 0, 0, ${alpha})`;
+            context.fillText("[blocked]", 70 + ((fontSize / 2) * typeText.length), infoTextPosY + (fontSize * (18 + (forceI * 3 + 0))));
+            context.restore();
+        }
+        context.fillText(`xd: ${force.xd}`, 85, infoTextPosY + (fontSize * (18 + (forceI * 3 + 1))));
+        context.fillText(`yd: ${force.yd}`, 85, infoTextPosY + (fontSize * (18 + (forceI * 3 + 2))));
         ++forceI;
     });
     context.restore();

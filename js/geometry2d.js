@@ -17,6 +17,17 @@ function degreesToRadians(degrees) {
 function radiansToDegrees(radians) {
     return (radians * 180 / Math.PI);
 }
+function isDegreeInSector(deg, minDeg, maxDeg) {
+    deg = keepDegreeInRange(deg);
+    minDeg = keepDegreeInRange(minDeg);
+    maxDeg = keepDegreeInRange(maxDeg);
+    if (maxDeg >= minDeg) {
+        return ((deg >= minDeg) && (deg <= maxDeg));
+    }
+    // special case for when the sector goes through the 0° direction/radius
+    return (((deg >= 0) && (deg <= maxDeg)) ||
+        ((deg >= minDeg) && (deg <= 360)));
+}
 /**
  * A 2-dimensional position/point.
  */
@@ -66,6 +77,13 @@ class Box2D {
     set x(x) { this.position.x = x; }
     get y() { return this.position.y; }
     set y(y) { this.position.y = y; }
+    computeXEnd() { return (this.x + this.width); }
+    computeYEnd() { return (this.y + this.height); }
+    copy() {
+        const copy = new Box2D(0, 0, 0, 0);
+        copy.assign(this);
+        return copy;
+    }
 }
 /**
  * A 2-dimensional euclidean vector.
@@ -132,14 +150,17 @@ class Vector2D {
         this.xd = xd;
         this.yd = yd;
     }
+    setZero() {
+        this.setXdYd(0, 0);
+    }
     assign(other) {
         this.setXdYd(other.xd, other.yd);
     }
     static sum(vectors) {
         const sum = new Vector2D(0, 0);
-        for (const vector of vectors) {
+        vectors.forEach((vector) => {
             sum.add(vector);
-        }
+        });
         return sum;
     }
     /**
@@ -166,6 +187,10 @@ class Vector2D {
         this.xd += other.xd;
         this.yd += other.yd;
     }
+    multiply(n) {
+        // TODO: lazy way to do this, change it
+        this.changeMagnitude(this.computeMagnitude() * n);
+    }
     /**
      * Checks whether or not `this` is a zero vector.
      *
@@ -173,6 +198,9 @@ class Vector2D {
      */
     isZero() {
         return ((this.xd === 0) && (this.yd === 0));
+    }
+    isNotZero() {
+        return !(this.isZero());
     }
     reverse() {
         this.xd = -(this.xd);

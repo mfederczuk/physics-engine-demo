@@ -43,6 +43,9 @@ class WebKeyboardController extends Controller {
         _WebKeyboardController_jump.set(this, false);
         // TODO: these switch-cases are pretty much the exact same -- replace with a `keyMap` or something?
         window.onkeydown = (event) => {
+            if (event.repeat) {
+                return;
+            }
             switch (event.key) {
                 case (__classPrivateFieldGet(WebKeyboardController, _a, "f", _WebKeyboardController_LEFT_KEY)): {
                     __classPrivateFieldSet(this, _WebKeyboardController_left, true, "f");
@@ -75,9 +78,17 @@ class WebKeyboardController extends Controller {
             }
         };
     }
-    leftActive() { return __classPrivateFieldGet(this, _WebKeyboardController_left, "f"); }
-    rightActive() { return __classPrivateFieldGet(this, _WebKeyboardController_right, "f"); }
-    jumpActive() { return __classPrivateFieldGet(this, _WebKeyboardController_jump, "f"); }
+    leftActive() {
+        return __classPrivateFieldGet(this, _WebKeyboardController_left, "f");
+    }
+    rightActive() {
+        return __classPrivateFieldGet(this, _WebKeyboardController_right, "f");
+    }
+    jumpActive() {
+        const jump = __classPrivateFieldGet(this, _WebKeyboardController_jump, "f");
+        __classPrivateFieldSet(this, _WebKeyboardController_jump, false, "f");
+        return jump;
+    }
 }
 _a = WebKeyboardController, _WebKeyboardController_left = new WeakMap(), _WebKeyboardController_right = new WeakMap(), _WebKeyboardController_jump = new WeakMap();
 _WebKeyboardController_LEFT_KEY = { value: "a" };
