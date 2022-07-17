@@ -172,12 +172,12 @@ class Vector2D {
 		this.setXdYd(other.xd, other.yd);
 	}
 
-	static sum(vectors: Iterable<Readonly<Vector2D>>): Vector2D {
+	static sum(vectors: Sequence<Readonly<Vector2D>>): Vector2D {
 		const sum = new Vector2D(0, 0);
 
-		for(const vector of vectors) {
+		vectors.forEach((vector: Readonly<Vector2D>) => {
 			sum.add(vector);
-		}
+		});
 
 		return sum;
 	}
