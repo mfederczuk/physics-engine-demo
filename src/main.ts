@@ -54,16 +54,13 @@ function updateEntity(state: State, entity: Entity) {
 
 	entity.forces.markAsRemoved(ForceType.LEFT, ForceType.RIGHT, ForceType.JUMP);
 
-	// manual movement (left, right & jump) is only possible when grounded or when there is
-	// no gravity (TODO: change this? mostly just here for testing right now)
+	// manual movement (left, right & jump) is only possible when grounded or when noclip is on
 	// TODO: air (double, triple, ...) jumps?
 	// FIXME: this grounded check is wrong (needs to take gravity into consideration - though don't take the global
 	//        gravity, use the gravity of the entity)
 	// TODO: if noclip is active there should be different controls? up/down/left/right that are always available
 	//       without being grounded?
-	if(state.isEntityGrounded(entity) ||
-	   !(entity.forces.contains(ForceType.GRAVITY))) {
-
+	if(state.isEntityGrounded(entity) || entity.noclip) {
 		const entityGravity: Vector2D = entity.forces.getOrDefault(ForceType.GRAVITY, state.gravity);
 
 		if(entity.controller.leftActive()) {
