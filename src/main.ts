@@ -253,8 +253,14 @@ function drawState(state: Readonly<State>, context: CanvasRenderingContext2D, fp
 	context.fillText(`xd: ${state.subject.velocity.xd}`,       65, infoTextPosY + (fontSize * 11));
 	context.fillText(`yd: ${state.subject.velocity.yd}`,       65, infoTextPosY + (fontSize * 12));
 
+	const subjectNetForce = state.subject.forces.computeNetForce();
+
 	// TODO: draw forces as actual vectors (i.e.: arrows)?
 	context.fillText("forces:",                                45, infoTextPosY + (fontSize * 14));
+
+	context.fillText(`xd: ${subjectNetForce.xd}`,              65, infoTextPosY + (fontSize * 15));
+	context.fillText(`yd: ${subjectNetForce.yd}`,              65, infoTextPosY + (fontSize * 16));
+
 	let forceI = 0;
 	context.save();
 	state.subject.forces
@@ -281,19 +287,19 @@ function drawState(state: Readonly<State>, context: CanvasRenderingContext2D, fp
 
 			const typeText = (type || "unnamed") + ":";
 
-			context.fillText(typeText,          65,                                      infoTextPosY + (fontSize * (15 + (forceI * 3 + 0))));
+			context.fillText(typeText,          65,                                      infoTextPosY + (fontSize * (18 + (forceI * 3 + 0))));
 
 			if(blocked) {
 				context.save();
 
 				context.fillStyle = `rgba(127, 0, 0, ${alpha})`;
-				context.fillText("[blocked]",   70 + ((fontSize / 2) * typeText.length), infoTextPosY + (fontSize * (15 + (forceI * 3 + 0))));
+				context.fillText("[blocked]",   70 + ((fontSize / 2) * typeText.length), infoTextPosY + (fontSize * (18 + (forceI * 3 + 0))));
 
 				context.restore();
 			}
 
-			context.fillText(`xd: ${force.xd}`, 85,                                      infoTextPosY + (fontSize * (15 + (forceI * 3 + 1))));
-			context.fillText(`yd: ${force.yd}`, 85,                                      infoTextPosY + (fontSize * (15 + (forceI * 3 + 2))));
+			context.fillText(`xd: ${force.xd}`, 85,                                      infoTextPosY + (fontSize * (18 + (forceI * 3 + 1))));
+			context.fillText(`yd: ${force.yd}`, 85,                                      infoTextPosY + (fontSize * (18 + (forceI * 3 + 2))));
 
 			++forceI;
 		});
