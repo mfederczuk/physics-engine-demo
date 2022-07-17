@@ -88,6 +88,15 @@ class Box2D {
 
 	get y(): number { return this.position.y; }
 	set y(y: number) { this.position.y = y; }
+
+	computeXEnd(): number { return (this.x + this.width);  }
+	computeYEnd(): number { return (this.y + this.height); }
+
+	copy(this: Readonly<Box2D>): Box2D {
+		const copy = new Box2D(0, 0, 0, 0);
+		copy.assign(this);
+		return copy;
+	}
 }
 
 /**
@@ -237,6 +246,11 @@ class Vector2D {
 		this.yd += other.yd;
 	}
 
+	multiply(n: number) {
+		// TODO: lazy way to do this, change it
+		this.changeMagnitude(this.computeMagnitude() * n);
+	}
+
 	/**
 	 * Checks whether or not `this` is a zero vector.
 	 *
@@ -244,6 +258,10 @@ class Vector2D {
 	 */
 	isZero(this: Readonly<Vector2D>): boolean {
 		return ((this.xd === 0) && (this.yd === 0));
+	}
+
+	isNotZero(this: Readonly<Vector2D>): boolean {
+		return !(this.isZero());
 	}
 
 	reverse() {
