@@ -42,6 +42,10 @@ class WebKeyboardController extends Controller {
 		// TODO: these switch-cases are pretty much the exact same -- replace with a `keyMap` or something?
 
 		window.onkeydown = (event: KeyboardEvent) => {
+			if(event.repeat) {
+				return;
+			}
+
 			switch(event.key) {
 				case(WebKeyboardController.#LEFT_KEY): {
 					this.#left = true;
@@ -76,9 +80,19 @@ class WebKeyboardController extends Controller {
 		};
 	}
 
-	leftActive():  boolean { return this.#left;  }
-	rightActive(): boolean { return this.#right; }
-	jumpActive():  boolean { return this.#jump;  }
+	leftActive(): boolean {
+		return this.#left;
+	}
+
+	rightActive(): boolean {
+		return this.#right;
+	}
+
+	jumpActive(): boolean {
+		const jump = this.#jump;
+		this.#jump = false;
+		return jump;
+	}
 }
 
 /**
