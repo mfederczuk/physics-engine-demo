@@ -168,6 +168,10 @@ class Vector2D {
 		this.yd = yd;
 	}
 
+	setZero() {
+		this.setXdYd(0, 0);
+	}
+
 	assign(other: Readonly<Vector2D>) {
 		this.setXdYd(other.xd, other.yd);
 	}
