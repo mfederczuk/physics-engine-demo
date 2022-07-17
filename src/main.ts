@@ -4,7 +4,7 @@ class State {
 	// TODO: move these into a separate `StateConfig` object?
 	readonly gravity: Vector2D = new Vector2D(0, 0.5);
 	defaultEntityManualMovementSpeed: number = 1;
-	frictionRate: number = 0.5; // TODO: this should be useless once correctly calculating friction with mass and gravity?
+	frictionRate: number = 0.1; // TODO: this should be useless once correctly calculating friction with mass and gravity?
 	defaultEntityJumpSpeed: number = 15;
 
 	readonly bounds: Box2D = new Box2D(0, 0, 0, 0);
@@ -60,7 +60,7 @@ function updateEntity(state: State, entity: Entity) {
 	entity.forces.setBlocked(entity.noclip, ForceType.GRAVITY, ForceBlockReason.NOCLIP);
 	entity.forces.put(ForceType.GRAVITY, state.gravity);
 
-	entity.forces.markAsRemoved(ForceType.LEFT, ForceType.RIGHT, ForceType.JUMP);
+	entity.forces.markAsRemoved(ForceType.FRICTION, ForceType.LEFT, ForceType.RIGHT, ForceType.JUMP);
 
 	// manual movement (left, right & jump) is only possible when grounded or when noclip is on
 	// TODO: air (double, triple, ...) jumps?
@@ -103,6 +103,21 @@ function updateEntity(state: State, entity: Entity) {
 	}
 
 
+	// TODO: add air resistance (proper name is "drag")
+	//       good idea to add a `fluids: Fluid[]` (or something like this) attribute to the state? every fluid would
+	//       have it's own resistance this way would be easy to add water and such
+
+	// TODO: add terminal velocity
+
+	// ground friction
+	// TODO: friction on walls and ceilings?
+	if(state.isEntityGrounded(entity)) {
+		const frictionForce = entity.velocity.reversed();
+		frictionForce.multiply(state.frictionRate);
+		entity.forces.put(ForceType.FRICTION, frictionForce);
+	}
+
+
 	// updating velocity
 	const netForce: Readonly<Vector2D> = entity.forces.computeNetForce();
 	entity.velocity.add(netForce);
@@ -128,34 +143,6 @@ function updateEntity(state: State, entity: Entity) {
 		} else if((entity.boundingBox.y + entity.boundingBox.height) > state.bounds.height) {
 			entity.boundingBox.y = (state.bounds.height - entity.boundingBox.height);
 			entity.velocity.yd = 0;
-		}
-	}
-
-	// FIXME: should the friction and drag calculation happen BEFORE adding the velocity to the position?
-
-	// TODO: add air resistance (proper name is "drag")
-	//       good idea to add a `fluids: Fluid[]` (or something like this) attribute to the state? every fluid would
-	//       have it's own resistance this way would be easy to add water and such
-
-	// TODO: add terminal velocity
-
-	// ground friction
-	// TODO: friction on walls and ceilings?
-	// TODO: gravity (or, to be more accurate, the net force that is pulling down) needs to impact the amount of
-	//       friction
-	if(state.isEntityGrounded(entity)) {
-		if(entity.velocity.xd > 0) {
-			entity.velocity.xd -= state.frictionRate;
-
-			if(entity.velocity.xd < 0) {
-				entity.velocity.xd = 0;
-			}
-		} else if(entity.velocity.xd < 0) {
-			entity.velocity.xd += state.frictionRate;
-
-			if(entity.velocity.xd > 0) {
-				entity.velocity.xd = 0;
-			}
 		}
 	}
 }

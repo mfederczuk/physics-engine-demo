@@ -1,8 +1,10 @@
 enum ForceType {
-	GRAVITY = "gravity",
-	LEFT    = "left",
-	RIGHT   = "right",
-	JUMP    = "jump",
+	GRAVITY  = "gravity",
+	FRICTION = "friction",
+
+	LEFT  = "left",
+	RIGHT = "right",
+	JUMP  = "jump",
 
 	DEBUG = "[debug]",
 }
