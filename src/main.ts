@@ -42,8 +42,16 @@ class State {
 	}
 
 	isEntityGrounded(entity: Entity): boolean {
-		return ((entity.forces.computeNetForce().yd > 0) &&
-		        ((entity.boundingBox.y + entity.boundingBox.height) >= state.bounds.height));
+		const entityNetForce: Vector2D = entity.forces.computeNetForce();
+
+		const testBox: Box2D = entity.boundingBox.copy();
+		testBox.x += entityNetForce.xd;
+		testBox.y += entityNetForce.yd;
+
+		return ((testBox.x             < this.bounds.x) ||
+		        (testBox.y             < this.bounds.y) ||
+		        (testBox.computeXEnd() > this.bounds.computeXEnd()) ||
+		        (testBox.computeYEnd() > this.bounds.computeYEnd()));
 	}
 }
 
@@ -56,8 +64,6 @@ function updateEntity(state: State, entity: Entity) {
 
 	// manual movement (left, right & jump) is only possible when grounded or when noclip is on
 	// TODO: air (double, triple, ...) jumps?
-	// FIXME: this grounded check is wrong (needs to take gravity into consideration - though don't take the global
-	//        gravity, use the gravity of the entity)
 	// TODO: if noclip is active there should be different controls? up/down/left/right that are always available
 	//       without being grounded?
 	if(state.isEntityGrounded(entity) || entity.noclip) {
@@ -137,7 +143,6 @@ function updateEntity(state: State, entity: Entity) {
 	// TODO: friction on walls and ceilings?
 	// TODO: gravity (or, to be more accurate, the net force that is pulling down) needs to impact the amount of
 	//       friction
-	// FIXME: this grounded check is wrong (needs to take the net force into consideration)
 	if(state.isEntityGrounded(entity)) {
 		if(entity.velocity.xd > 0) {
 			entity.velocity.xd -= state.frictionRate;
