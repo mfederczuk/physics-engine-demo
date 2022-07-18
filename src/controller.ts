@@ -4,6 +4,8 @@
  * The way that this works is that the game loop queries if "buttons" are active by using the `*Active` methods.
  */
 abstract class Controller {
+	abstract upActive(): boolean;
+	abstract downActive(): boolean;
 	abstract leftActive():  boolean;
 	abstract rightActive(): boolean;
 	abstract jumpActive():  boolean;
@@ -17,6 +19,8 @@ abstract class Controller {
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 class DummyController extends Controller {
+	upActive():    boolean { return false; }
+	downActive():  boolean { return false; }
 	leftActive():  boolean { return false; }
 	rightActive(): boolean { return false; }
 	jumpActive():  boolean { return false; }
@@ -28,10 +32,14 @@ class DummyController extends Controller {
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 class WebKeyboardController extends Controller {
+	static readonly #UP_KEY    = "w";
+	static readonly #DOWN_KEY  = "s";
 	static readonly #LEFT_KEY  = "a";
 	static readonly #RIGHT_KEY = "d";
 	static readonly #JUMP_KEY  = " ";
 
+	#up: boolean = false;
+	#down: boolean = false;
 	#left: boolean = false;
 	#right: boolean = false;
 	#jump: boolean = false;
@@ -47,6 +55,14 @@ class WebKeyboardController extends Controller {
 			}
 
 			switch(event.key) {
+				case(WebKeyboardController.#UP_KEY): {
+					this.#up = true;
+					break;
+				}
+				case(WebKeyboardController.#DOWN_KEY): {
+					this.#down = true;
+					break;
+				}
 				case(WebKeyboardController.#LEFT_KEY): {
 					this.#left = true;
 					break;
@@ -64,6 +80,14 @@ class WebKeyboardController extends Controller {
 
 		window.onkeyup = (event: KeyboardEvent) => {
 			switch(event.key) {
+				case(WebKeyboardController.#UP_KEY): {
+					this.#up = false;
+					break;
+				}
+				case(WebKeyboardController.#DOWN_KEY): {
+					this.#down = false;
+					break;
+				}
 				case(WebKeyboardController.#LEFT_KEY): {
 					this.#left = false;
 					break;
@@ -78,6 +102,14 @@ class WebKeyboardController extends Controller {
 				}
 			}
 		};
+	}
+
+	upActive(): boolean {
+		return this.#up;
+	}
+
+	downActive(): boolean {
+		return this.#down;
 	}
 
 	leftActive(): boolean {
@@ -102,10 +134,14 @@ class WebKeyboardController extends Controller {
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 class RandomController extends Controller {
+	static readonly #UP_CHANCE    = 0.1;
+	static readonly #DOWN_CHANCE  = 0.1;
 	static readonly #LEFT_CHANCE  = 0.4;
 	static readonly #RIGHT_CHANCE = 0.4;
 	static readonly #JUMP_CHANCE  = 0.025;
 
+	upActive():    boolean { return (Math.random() < RandomController.#UP_CHANCE); }
+	downActive():  boolean { return (Math.random() < RandomController.#DOWN_CHANCE); }
 	leftActive():  boolean { return (Math.random() < RandomController.#LEFT_CHANCE); }
 	rightActive(): boolean { return (Math.random() < RandomController.#RIGHT_CHANCE); }
 	jumpActive():  boolean { return (Math.random() < RandomController.#JUMP_CHANCE); }
@@ -133,6 +169,14 @@ class MergedController extends Controller {
 		}
 
 		this.controllers = [controllersOrController, ...otherControllers];
+	}
+
+	upActive(): boolean {
+		return this.controllers.some((controller: Controller) => controller.upActive());
+	}
+
+	downActive(): boolean {
+		return this.controllers.some((controller: Controller) => controller.downActive());
 	}
 
 	leftActive(): boolean {

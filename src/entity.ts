@@ -6,6 +6,7 @@ class Entity {
 	                                      //       terminal velocity and maybe impact force and others?
 	         manualMovementSpeed: number;
 	         jumpSpeed:           number;
+	         noclipFlySpeed:      number;
 
 	controller: Controller;
 
@@ -19,6 +20,7 @@ class Entity {
 		mass: number,
 		manualMovementSpeed: number,
 		jumpSpeed: number,
+		noclipFlySpeed: number,
 
 		controller: Controller = new DummyController(),
 	) {
@@ -27,6 +29,7 @@ class Entity {
 		this.mass                = mass;
 		this.manualMovementSpeed = manualMovementSpeed;
 		this.jumpSpeed           = jumpSpeed;
+		this.noclipFlySpeed      = noclipFlySpeed;
 
 		this.controller = controller;
 	}

@@ -6,6 +6,7 @@ class State {
 	defaultEntityManualMovementSpeed: number = 1;
 	frictionRate: number = 0.1; // TODO: this should be useless once correctly calculating friction with mass and gravity?
 	defaultEntityJumpSpeed: number = 15;
+	defaultEntityNoclipFlySpeed: number = 12;
 
 	readonly bounds: Box2D = new Box2D(0, 0, 0, 0);
 	readonly subject: Entity;
@@ -27,6 +28,7 @@ class State {
 		mass: number,
 		manualMovementSpeed: number = this.defaultEntityManualMovementSpeed,
 		jumpSpeed: number = this.defaultEntityJumpSpeed,
+		noclipFlySpeed: number = this.defaultEntityNoclipFlySpeed,
 
 		controller: Controller = new DummyController(),
 	): Entity {
@@ -36,6 +38,7 @@ class State {
 			mass,
 			manualMovementSpeed,
 			jumpSpeed,
+			noclipFlySpeed,
 
 			controller,
 		);
@@ -56,17 +59,43 @@ class State {
 }
 
 function updateEntity(state: State, entity: Entity) {
-	// noclip & gravity
-	entity.forces.setBlocked(entity.noclip, ForceType.GRAVITY, ForceBlockReason.NOCLIP);
+	if(entity.noclip) {
+		let noclipXd = 0;
+		let noclipYd = 0;
+
+		if(entity.controller.upActive()) {
+			noclipYd -= entity.noclipFlySpeed;
+		}
+
+		if(entity.controller.downActive()) {
+			noclipYd += entity.noclipFlySpeed;
+		}
+
+		if(entity.controller.leftActive()) {
+			noclipXd -= entity.noclipFlySpeed;
+		}
+
+		if(entity.controller.rightActive()) {
+			noclipXd += entity.noclipFlySpeed;
+		}
+
+		entity.forces.markAllAsRemoved();
+		entity.velocity.setZero();
+
+		entity.boundingBox.position.x += noclipXd;
+		entity.boundingBox.position.y += noclipYd;
+
+		return;
+	}
+
+
 	entity.forces.put(ForceType.GRAVITY, state.gravity);
 
 	entity.forces.markAsRemoved(ForceType.FRICTION, ForceType.LEFT, ForceType.RIGHT, ForceType.JUMP);
 
-	// manual movement (left, right & jump) is only possible when grounded or when noclip is on
+	// manual movement (left, right & jump) is only possible when grounded
 	// TODO: air (double, triple, ...) jumps?
-	// TODO: if noclip is active there should be different controls? up/down/left/right that are always available
-	//       without being grounded?
-	if(state.isEntityGrounded(entity) || entity.noclip) {
+	if(state.isEntityGrounded(entity)) {
 		const entityNetForceDirection: number = entity.forces
 			.computeNetForce()
 			.computeDirection();
@@ -128,22 +157,20 @@ function updateEntity(state: State, entity: Entity) {
 
 
 	// keeping position in bounds & stopping velocity when hitting bounds
-	if(!(entity.noclip)) {
-		if(entity.boundingBox.x < state.bounds.x) {
-			entity.boundingBox.x = state.bounds.x;
-			entity.velocity.xd = 0;
-		} else if((entity.boundingBox.x + entity.boundingBox.width) > state.bounds.width) {
-			entity.boundingBox.x = (state.bounds.width - entity.boundingBox.width);
-			entity.velocity.xd = 0;
-		}
+	if(entity.boundingBox.x < state.bounds.x) {
+		entity.boundingBox.x = state.bounds.x;
+		entity.velocity.xd = 0;
+	} else if((entity.boundingBox.x + entity.boundingBox.width) > state.bounds.width) {
+		entity.boundingBox.x = (state.bounds.width - entity.boundingBox.width);
+		entity.velocity.xd = 0;
+	}
 
-		if(entity.boundingBox.y < state.bounds.y) {
-			entity.boundingBox.y = state.bounds.y;
-			entity.velocity.yd = 0;
-		} else if((entity.boundingBox.y + entity.boundingBox.height) > state.bounds.height) {
-			entity.boundingBox.y = (state.bounds.height - entity.boundingBox.height);
-			entity.velocity.yd = 0;
-		}
+	if(entity.boundingBox.y < state.bounds.y) {
+		entity.boundingBox.y = state.bounds.y;
+		entity.velocity.yd = 0;
+	} else if((entity.boundingBox.y + entity.boundingBox.height) > state.bounds.height) {
+		entity.boundingBox.y = (state.bounds.height - entity.boundingBox.height);
+		entity.velocity.yd = 0;
 	}
 }
 
@@ -313,9 +340,9 @@ function drawState(state: Readonly<State>, context: CanvasRenderingContext2D, fp
 const state = new State();
 state.subject.controller = new WebKeyboardController(window);
 state.otherEntities.push(
-	state.newEntity("Burt", new Box2D(0, 0, 100, 65), 5, undefined, undefined, new RandomController()),
-	state.newEntity("Mark", new Box2D(0, 0, 50     ), 5, undefined, undefined, new RandomController()),
-	state.newEntity("Wug",  new Box2D(0, 0, 30, 125), 5, undefined, undefined, new RandomController()),
+	state.newEntity("Burt", new Box2D(0, 0, 100, 65), 5, undefined, undefined, undefined, new RandomController()),
+	state.newEntity("Mark", new Box2D(0, 0, 50     ), 5, undefined, undefined, undefined, new RandomController()),
+	state.newEntity("Wug",  new Box2D(0, 0, 30, 125), 5, undefined, undefined, undefined, new RandomController()),
 );
 
 window.onload = () => {
