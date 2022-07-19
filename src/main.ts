@@ -9,19 +9,25 @@ class State {
 	defaultEntityNoclipFlySpeed: number = 12;
 
 	readonly bounds: Box2D = new Box2D(0, 0, 0, 0);
+	readonly entities: EntityCollection = new EntityCollection();
 	readonly subject: Entity;
-
-	readonly otherEntities: Entity[] = [];
 
 	constructor() {
 		this.subject = this
-			.newEntity(
+			.addNewEntity(
 				"Subject",
 				new Box2D(0, 0, State.SUBJECT_SIZE),
 				50
-			);
+			)
+			.entity;
 	}
 
+	/**
+	 * Instantiates and returns a new entity.
+	 *
+	 * Note: This method does *not* add the new entity to the entity collection! If you want that to happen, use
+	 * `addNewEntity`.
+	 */
 	newEntity(
 		name: string,
 		boundingBox: Box2D,
@@ -42,6 +48,33 @@ class State {
 
 			controller,
 		);
+	}
+
+	addNewEntity(
+		name: string,
+		boundingBox: Box2D,
+		mass: number,
+		manualMovementSpeed: number = this.defaultEntityManualMovementSpeed,
+		jumpSpeed: number = this.defaultEntityJumpSpeed,
+		noclipFlySpeed: number = this.defaultEntityNoclipFlySpeed,
+
+		controller: Controller = new DummyController(),
+	): EntityWithId {
+		const entity: Entity = this
+			.newEntity(
+				name,
+				boundingBox,
+				mass,
+				manualMovementSpeed,
+				jumpSpeed,
+				noclipFlySpeed,
+
+				controller,
+			);
+
+		const id: number = this.entities.add(entity);
+
+		return { id, entity };
 	}
 
 	isEntityGrounded(entity: Entity): boolean {
@@ -175,8 +208,10 @@ function updateEntity(state: State, entity: Entity) {
 }
 
 function updateState(state: State) {
-	updateEntity(state, state.subject);
-	state.otherEntities.forEach(updateEntity.bind(undefined, state));
+	state.entities.sequence()
+		.waitForEach(({ entity }: EntityWithId) => {
+			updateEntity(state, entity);
+		});
 }
 
 function drawState(state: Readonly<State>, context: CanvasRenderingContext2D, fps: number) {
@@ -200,37 +235,40 @@ function drawState(state: Readonly<State>, context: CanvasRenderingContext2D, fp
 
 
 	// draw other entities
-	state.otherEntities.forEach((entity: Entity) => {
-		context.save();
-		// border
-		context.fillStyle = "black";
-		context.fillRect(
-			entity.boundingBox.x,
-			entity.boundingBox.y,
-			entity.boundingBox.width,
-			entity.boundingBox.height,
-		);
+	state.entities.sequence()
+		.filter(({ entity }: EntityWithId) => (entity !== state.subject))
+		.waitForEach(({ entity }: EntityWithId) => {
+			context.save();
 
-		// body
-		context.fillStyle = "green";
-		context.fillRect(
-			entity.boundingBox.x + 2,
-			entity.boundingBox.y + 2,
-			entity.boundingBox.width - 4,
-			entity.boundingBox.height - 4,
-		);
+			// border
+			context.fillStyle = "black";
+			context.fillRect(
+				entity.boundingBox.x,
+				entity.boundingBox.y,
+				entity.boundingBox.width,
+				entity.boundingBox.height,
+			);
 
-		// name
-		context.font = "12px monospace";
-		context.fillStyle = "black";
-		context.fillText(
-			entity.name,
-			entity.boundingBox.x + 4,
-			entity.boundingBox.y + 12,
-		);
+			// body
+			context.fillStyle = "green";
+			context.fillRect(
+				entity.boundingBox.x + 2,
+				entity.boundingBox.y + 2,
+				entity.boundingBox.width - 4,
+				entity.boundingBox.height - 4,
+			);
 
-		context.restore();
-	});
+			// name
+			context.font = "12px monospace";
+			context.fillStyle = "black";
+			context.fillText(
+				entity.name,
+				entity.boundingBox.x + 4,
+				entity.boundingBox.y + 12,
+			);
+
+			context.restore();
+		});
 
 
 	// draw subject
@@ -339,11 +377,9 @@ function drawState(state: Readonly<State>, context: CanvasRenderingContext2D, fp
 // global state so that it can be manipulated using the browser console
 const state = new State();
 state.subject.controller = new WebKeyboardController(window);
-state.otherEntities.push(
-	state.newEntity("Burt", new Box2D(0, 0, 100, 65), 5, undefined, undefined, undefined, new RandomController()),
-	state.newEntity("Mark", new Box2D(0, 0, 50     ), 5, undefined, undefined, undefined, new RandomController()),
-	state.newEntity("Wug",  new Box2D(0, 0, 30, 125), 5, undefined, undefined, undefined, new RandomController()),
-);
+state.addNewEntity("Burt", new Box2D(0, 0, 100, 65), 5, undefined, undefined, undefined, new RandomController());
+state.addNewEntity("Mark", new Box2D(0, 0, 50     ), 5, undefined, undefined, undefined, new RandomController());
+state.addNewEntity("Wug",  new Box2D(0, 0, 30, 125), 5, undefined, undefined, undefined, new RandomController());
 
 window.onload = () => {
 	const canvas: (HTMLCanvasElement | null) = document.getElementById("main-canvas") as (HTMLCanvasElement | null);
