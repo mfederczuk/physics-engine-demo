@@ -1,13 +1,39 @@
 type SequenceNextResult<T> = ({ done: false; element: T; } | { done: true; });
 
+interface SequenceAttributes {
+	neverDone: boolean;
+}
+
 abstract class Sequence<T> {
 
 	abstract next(): SequenceNextResult<T>;
+
+	abstract getAttributes(): SequenceAttributes;
 
 	//#region factory functions
 
 	static empty<T = never>(): Sequence<T> {
 		return new EmptySequence();
+	}
+
+	static generate<T>(n: number, generator: (index: number) => T): Sequence<T> {
+		return new GeneratedSequence(generator, n);
+	}
+
+	static generateForever<T>(generator: (index: number) => T): Sequence<T> {
+		return this.generate(Infinity, generator);
+	}
+
+	static repeatElement<T>(element: T, n: number): Sequence<T> {
+		return this.generate(n, () => (element));
+	}
+
+	static repeatElementForever<T>(element: T): Sequence<T> {
+		return this.generateForever(() => (element));
+	}
+
+	static intRange(begin: number, exclusiveEnd: number): Sequence<number> {
+		return new IntRangeSequence(Math.floor(begin), Math.floor(exclusiveEnd));
 	}
 
 	//#region from*
@@ -86,15 +112,83 @@ abstract class Sequence<T> {
 		return new FlattenedSequence(this);
 	}
 
+	take(n: number): Sequence<T> {
+		return new NTakenSequence(this, n);
+	}
+
+	skip(n: number): Sequence<T> {
+		return new NSkippedSequence(this, n);
+	}
+
 	sort(comparator: (elementA: T, elementB: T) => number): Sequence<T> {
 		return new SortedSequence(this, comparator);
+	}
+
+	isEmpty(): Sequence<boolean> {
+		return new IsEmptySequence(this);
+	}
+
+	isNotEmpty(): Sequence<boolean> {
+		return this
+			.isEmpty()
+			.map((empty) => (!empty));
 	}
 
 	onEach(action: (element: T) => void): Sequence<T> {
 		return new ActionOnEachElementSequence(this, action);
 	}
 
-	forEach(action: (element: T) => void): void {
+	hide(hideAttributes: boolean = false): Sequence<T> {
+		if(hideAttributes) {
+			return new class extends SequenceWithSource<T> {
+
+				constructor(
+					source: Sequence<T>,
+				) {
+					super(source);
+				}
+
+				next(): SequenceNextResult<T> {
+					return this.source.next();
+				}
+
+				getAttributes(): SequenceAttributes {
+					return {
+						neverDone: false,
+					};
+				}
+			}(this);
+		} else {
+			return new class extends SequenceWithSource<T> {
+
+				constructor(
+					source: Sequence<T>,
+				) {
+					super(source);
+				}
+
+				next(): SequenceNextResult<T> {
+					return this.source.next();
+				}
+
+				getAttributes(): SequenceAttributes {
+					return super.getAttributes();
+				}
+			}(this);
+		}
+	}
+
+	//#region wait*
+
+	wait(): (void | never) {
+		this.#neverDoneGuard();
+
+		while(!(this.next().done));
+	}
+
+	waitForEach(action: (element: T) => void): (void | never) {
+		this.#neverDoneGuard();
+
 		let result: SequenceNextResult<T>;
 		do {
 			// eslint-disable-next-line prefer-const
@@ -107,14 +201,83 @@ abstract class Sequence<T> {
 		} while(!(result.done));
 	}
 
-	wait() {
-		let result: SequenceNextResult<T>;
+	#neverDoneGuard(): (void | never) {
+		const { neverDone }: SequenceAttributes = this.getAttributes();
 
-		do {
-			// eslint-disable-next-line prefer-const
-			result = this.next();
-		} while(!(result.done));
+		if(neverDone) {
+			throw new Error("Refusing to wait for done on a sequence that never will be done");
+		}
 	}
+
+	//#region first*
+
+	waitForFirstOrElse<U>(defaultValueSupplier: () => U): (T | U | never) {
+		const result: SequenceNextResult<T> = this.next();
+
+		if(result.done) {
+			return defaultValueSupplier();
+		}
+
+		return result.element;
+	}
+
+	waitForFirstOrDefault<U>(defaultValue: U): (T | U | never) {
+		return this.waitForFirstOrElse(() => (defaultValue));
+	}
+
+	waitForFirst(): (T | never) {
+		return this.waitForFirstOrElse(() => { throw new Error("Empty sequence"); });
+	}
+
+	waitForFirstOrNull(): (T | null | never) {
+		return this.waitForFirstOrDefault(null);
+	}
+
+	waitForFirstOrUndefined(): (T | undefined | never) {
+		return this.waitForFirstOrDefault(undefined);
+	}
+
+	//#endregion
+
+	//#region single*
+
+	waitForSingleOrElse<U>(defaultValueSupplier: () => U): (T | U | never) {
+		let result: SequenceNextResult<T> = this.next();
+
+		if(result.done) {
+			return defaultValueSupplier();
+		}
+
+		const element: T = result.element;
+
+		result = this.next();
+
+		if(result.done) {
+			return element;
+		}
+
+		throw new Error("Multiple elements in sequence");
+	}
+
+	waitForSingleOrDefault<U>(defaultValue: U): (T | U | never) {
+		return this.waitForSingleOrElse(() => (defaultValue));
+	}
+
+	waitForSingle(): (T | never) {
+		return this.waitForSingleOrElse(() => { throw new Error("Empty sequence"); });
+	}
+
+	waitForSingleOrNull(): (T | null | never) {
+		return this.waitForSingleOrDefault(null);
+	}
+
+	waitForSingleOrUndefined(): (T | undefined | never) {
+		return this.waitForSingleOrDefault(undefined);
+	}
+
+	//#endregion
+
+	//#endregion
 
 	asIterator(): Iterator<T> {
 		return new SequenceAsIterator(this);
@@ -125,12 +288,12 @@ abstract class Sequence<T> {
 	}
 
 	toArray(destination: T[] = []): T[] {
-		this.forEach(destination.push.bind(destination));
+		this.waitForEach(destination.push.bind(destination));
 		return destination;
 	}
 
 	toSet(destination: Set<T> = new Set()): Set<T> {
-		this.forEach(destination.add.bind(destination));
+		this.waitForEach(destination.add.bind(destination));
 		return destination;
 	}
 }
@@ -139,6 +302,74 @@ class EmptySequence extends Sequence<never> {
 
 	next(): SequenceNextResult<never> {
 		return { done: true };
+	}
+
+	getAttributes(): SequenceAttributes {
+		return {
+			neverDone: false,
+		};
+	}
+}
+
+class GeneratedSequence<T> extends Sequence<T> {
+
+	#currentIndex: number = 0;
+
+	constructor(
+		readonly generator: (index: number) => T,
+		readonly n: number,
+	) {
+		super();
+	}
+
+	next(): SequenceNextResult<T> {
+		if(this.#currentIndex >= this.n) {
+			return { done: true };
+		}
+
+		const element: T = this.generator(this.#currentIndex);
+
+		++this.#currentIndex;
+
+		return { done: false, element };
+	}
+
+	getAttributes(): SequenceAttributes {
+		return {
+			neverDone: !(Number.isFinite(this.n)),
+		};
+	}
+}
+
+class IntRangeSequence extends Sequence<number> {
+
+	#current: number;
+
+	constructor(
+		begin: number,
+		readonly exclusiveEnd: number,
+	) {
+		super();
+
+		this.#current = begin;
+	}
+
+	next(): SequenceNextResult<number> {
+		if(this.#current >= this.exclusiveEnd) {
+			return { done: true };
+		}
+
+		const next: number = this.#current;
+
+		++this.#current;
+
+		return { done: false, element: next };
+	}
+
+	getAttributes(): SequenceAttributes {
+		return {
+			neverDone: (!(Number.isFinite(this.exclusiveEnd)) && Number.isFinite(this.#current)),
+		};
 	}
 }
 
@@ -163,6 +394,12 @@ class SequenceFromArray<T> extends Sequence<T> {
 
 		return { done: false, element };
 	}
+
+	getAttributes(): SequenceAttributes {
+		return {
+			neverDone: !(Number.isFinite(this.array.length)),
+		};
+	}
 }
 
 class SequenceFromIterator<T> extends Sequence<T> {
@@ -181,6 +418,12 @@ class SequenceFromIterator<T> extends Sequence<T> {
 		}
 
 		return { done: false, element: result.value };
+	}
+
+	getAttributes(): SequenceAttributes {
+		return {
+			neverDone: false,
+		};
 	}
 }
 
@@ -221,15 +464,32 @@ class MergedSequence<T> extends Sequence<T> {
 		this.#currentSequence = result.element;
 		return this.next();
 	}
+
+	getAttributes(): SequenceAttributes {
+		return this.sequencesSequence.getAttributes();
+	}
 }
 
-class FilteredSequence<T> extends Sequence<T> {
+abstract class SequenceWithSource<T, R = T> extends Sequence<R> {
 
 	constructor(
 		readonly source: Sequence<T>,
-		readonly predicate: (element: T) => boolean,
 	) {
 		super();
+	}
+
+	getAttributes(): SequenceAttributes {
+		return this.source.getAttributes();
+	}
+}
+
+class FilteredSequence<T> extends SequenceWithSource<T> {
+
+	constructor(
+		source: Sequence<T>,
+		readonly predicate: (element: T) => boolean,
+	) {
+		super(source);
 	}
 
 	next(): SequenceNextResult<T> {
@@ -243,13 +503,13 @@ class FilteredSequence<T> extends Sequence<T> {
 	}
 }
 
-class MappedSequence<T, R> extends Sequence<R> {
+class MappedSequence<T, R> extends SequenceWithSource<T, R> {
 
 	constructor(
-		readonly source: Sequence<T>,
+		source: Sequence<T>,
 		readonly mapper: (element: T) => R,
 	) {
-		super();
+		super(source);
 	}
 
 	next(): SequenceNextResult<R> {
@@ -264,15 +524,15 @@ class MappedSequence<T, R> extends Sequence<R> {
 	}
 }
 
-class FlatMappedSequence<T, R> extends Sequence<R> {
+class FlatMappedSequence<T, R> extends SequenceWithSource<T, R> {
 
 	#currentSequence: (Sequence<R> | null) = null;
 
 	constructor(
-		readonly source: Sequence<T>,
+		source: Sequence<T>,
 		readonly mapper: (element: T) => Sequence<R>,
 	) {
-		super();
+		super(source);
 	}
 
 	next(): SequenceNextResult<R> {
@@ -295,14 +555,14 @@ class FlatMappedSequence<T, R> extends Sequence<R> {
 	}
 }
 
-class FlattenedSequence<T> extends Sequence<T> {
+class FlattenedSequence<T> extends SequenceWithSource<Sequence<T>, T> {
 
 	#currentSequence: (Sequence<T> | null) = null;
 
 	constructor(
-		readonly source: Sequence<Sequence<T>>,
+		source: Sequence<Sequence<T>>,
 	) {
-		super();
+		super(source);
 	}
 
 	next(): SequenceNextResult<T> {
@@ -325,16 +585,77 @@ class FlattenedSequence<T> extends Sequence<T> {
 	}
 }
 
-class SortedSequence<T> extends Sequence<T> {
+class NTakenSequence<T> extends SequenceWithSource<T> {
+
+	#taken: number = 0;
+
+	constructor(
+		source: Sequence<T>,
+		readonly n: number,
+	) {
+		super(source);
+	}
+
+	next(): SequenceNextResult<T> {
+		if(this.#taken >= this.n) {
+			return { done: true };
+		}
+
+		const sourceResult: SequenceNextResult<T> = this.source.next();
+
+		if(!(sourceResult.done)) {
+			++this.#taken;
+		}
+
+		return sourceResult;
+	}
+
+	getAttributes(): SequenceAttributes {
+		const sourceAttributes: SequenceAttributes = super.getAttributes();
+		return {
+			...(sourceAttributes),
+			neverDone: ((sourceAttributes.neverDone ?? false) && !(Number.isFinite(this.n))),
+		};
+	}
+}
+
+class NSkippedSequence<T> extends SequenceWithSource<T> {
+
+	#skipped: number = 0;
+
+	constructor(
+		source: Sequence<T>,
+		readonly n: number,
+	) {
+		super(source);
+	}
+
+	next(): SequenceNextResult<T> {
+		const sourceResult: SequenceNextResult<T> = this.source.next();
+
+		if(sourceResult.done) {
+			return sourceResult;
+		}
+
+		if(this.#skipped < this.n) {
+			++this.#skipped;
+			return this.next();
+		}
+
+		return sourceResult;
+	}
+}
+
+class SortedSequence<T> extends SequenceWithSource<T> {
 
 	#sortedArray: readonly T[] = [];
 	#index: number = -1;
 
 	constructor(
-		readonly source: Sequence<T>,
+		source: Sequence<T>,
 		readonly comparator: (elementA: T, elementB: T) => number,
 	) {
-		super();
+		super(source);
 	}
 
 	next(): SequenceNextResult<T> {
@@ -358,13 +679,39 @@ class SortedSequence<T> extends Sequence<T> {
 	}
 }
 
-class ActionOnEachElementSequence<T> extends Sequence<T> {
+class IsEmptySequence<T> extends SequenceWithSource<T, boolean> {
+
+	#done: boolean = false;
+
+	next(): SequenceNextResult<boolean> {
+		if(this.#done) {
+			return { done: true };
+		}
+
+		const sourceResult: SequenceNextResult<T> = this.source.next();
+
+		if(sourceResult.done) {
+			return { done: false, element: true };
+		}
+
+		return { done: false, element: false };
+	}
+
+	getAttributes(): SequenceAttributes {
+		return {
+			...(super.getAttributes()),
+			neverDone: false,
+		};
+	}
+}
+
+class ActionOnEachElementSequence<T> extends SequenceWithSource<T> {
 
 	constructor(
-		readonly source: Sequence<T>,
+		source: Sequence<T>,
 		readonly action: (element: T) => void,
 	) {
-		super();
+		super(source);
 	}
 
 	next(): SequenceNextResult<T> {

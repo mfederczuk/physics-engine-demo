@@ -188,7 +188,7 @@ class Vector2D {
 	static sum(vectors: Sequence<Readonly<Vector2D>>): Vector2D {
 		const sum = new Vector2D(0, 0);
 
-		vectors.forEach((vector: Readonly<Vector2D>) => {
+		vectors.waitForEach((vector: Readonly<Vector2D>) => {
 			sum.add(vector);
 		});
 

@@ -302,7 +302,7 @@ function drawState(state: Readonly<State>, context: CanvasRenderingContext2D, fp
 
 			return elementA.type.localeCompare(elementB.type);
 		})
-		.forEach(({ type, force, markedAsRemoved, blocked }) => {
+		.waitForEach(({ type, force, markedAsRemoved, blocked }) => {
 			// 0.38 taken from Material guidelines: <https://material.io/design/interaction/states.html#disabled>
 			const alpha = ((!markedAsRemoved && !blocked) ? 1 : 0.38);
 
