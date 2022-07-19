@@ -1,3 +1,14 @@
+const BOUNDS_FILL_STYLE = "lightskyblue";
+
+const ENTITY_BORDER_FILL_STYLE = "black";
+const ENTITY_NAME_TEXT_SIZE_PX = 12;
+const ENTITY_NAME_TEXT_FONT_FAMILY = "monospace";
+const ENTITY_NAME_TEXT_FILL_STYLE = "black";
+
+const OTHER_ENTITY_BODY_FILL_STYLE = "forestgreen";
+
+const SUBJECT_BODY_FILL_STYLE = "royalblue";
+
 function drawEntity(
 	context: CanvasRenderingContext2D,
 	entity: Readonly<Entity>,
@@ -8,7 +19,7 @@ function drawEntity(
 	context.save();
 
 	// border
-	context.fillStyle = "black";
+	context.fillStyle = ENTITY_BORDER_FILL_STYLE;
 	context.fillRect(
 		entity.boundingBox.x,
 		entity.boundingBox.y,
@@ -27,12 +38,12 @@ function drawEntity(
 
 	if(showName) {
 		// name text
-		context.font = "12px monospace";
-		context.fillStyle = "black";
+		context.font = `${ENTITY_NAME_TEXT_SIZE_PX}px ${ENTITY_NAME_TEXT_FONT_FAMILY}`;
+		context.fillStyle = ENTITY_NAME_TEXT_FILL_STYLE;
 		context.fillText(
 			entity.name,
-			entity.boundingBox.x + borderWidth + 3,
-			entity.boundingBox.y + borderWidth + 12,
+			entity.boundingBox.x + borderWidth + (ENTITY_NAME_TEXT_SIZE_PX / 4),
+			entity.boundingBox.y + borderWidth + ENTITY_NAME_TEXT_SIZE_PX,
 		);
 	}
 
@@ -48,7 +59,7 @@ function drawFrame(context: CanvasRenderingContext2D, state: Readonly<State>, fp
 	context.save();
 
 	// draw bounds
-	context.fillStyle = "powderblue";
+	context.fillStyle = BOUNDS_FILL_STYLE;
 	context.fillRect(
 		state.bounds.x,
 		state.bounds.y,
@@ -60,11 +71,11 @@ function drawFrame(context: CanvasRenderingContext2D, state: Readonly<State>, fp
 	state.entities.sequence()
 		.filter(({ entity }: EntityWithId) => (entity !== state.subject))
 		.waitForEach(({ entity }: EntityWithId) => {
-			drawEntity(context, entity, 2, "green", true);
+			drawEntity(context, entity, 2, OTHER_ENTITY_BODY_FILL_STYLE, true);
 		});
 
 	// draw subject
-	drawEntity(context, state.subject, 1, "blue", false);
+	drawEntity(context, state.subject, 1, SUBJECT_BODY_FILL_STYLE, false);
 
 
 	// draw subject info text
