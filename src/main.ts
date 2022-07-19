@@ -1,12 +1,51 @@
+function drawEntity(
+	context: CanvasRenderingContext2D,
+	entity: Readonly<Entity>,
+	borderWidth: number,
+	bodyFillStyle: string,
+	showName: boolean,
+) {
+	context.save();
+
+	// border
+	context.fillStyle = "black";
+	context.fillRect(
+		entity.boundingBox.x,
+		entity.boundingBox.y,
+		entity.boundingBox.width,
+		entity.boundingBox.height,
+	);
+
+	// body
+	context.fillStyle = bodyFillStyle;
+	context.fillRect(
+		entity.boundingBox.x      +  borderWidth,
+		entity.boundingBox.y      +  borderWidth,
+		entity.boundingBox.width  - (borderWidth * 2),
+		entity.boundingBox.height - (borderWidth * 2),
+	);
+
+	if(showName) {
+		// name text
+		context.font = "12px monospace";
+		context.fillStyle = "black";
+		context.fillText(
+			entity.name,
+			entity.boundingBox.x + borderWidth + 3,
+			entity.boundingBox.y + borderWidth + 12,
+		);
+	}
+
+	context.restore();
+}
+
 function drawFrame(context: CanvasRenderingContext2D, state: Readonly<State>, fps: number) {
 	const canvas: HTMLCanvasElement = context.canvas;
 
 	// clear canvas
 	context.clearRect(0, 0, canvas.width, canvas.height);
 
-
 	context.save();
-
 
 	// draw bounds
 	context.fillStyle = "powderblue";
@@ -17,63 +56,15 @@ function drawFrame(context: CanvasRenderingContext2D, state: Readonly<State>, fp
 		state.bounds.height,
 	);
 
-
 	// draw other entities
 	state.entities.sequence()
 		.filter(({ entity }: EntityWithId) => (entity !== state.subject))
 		.waitForEach(({ entity }: EntityWithId) => {
-			context.save();
-
-			// border
-			context.fillStyle = "black";
-			context.fillRect(
-				entity.boundingBox.x,
-				entity.boundingBox.y,
-				entity.boundingBox.width,
-				entity.boundingBox.height,
-			);
-
-			// body
-			context.fillStyle = "green";
-			context.fillRect(
-				entity.boundingBox.x + 2,
-				entity.boundingBox.y + 2,
-				entity.boundingBox.width - 4,
-				entity.boundingBox.height - 4,
-			);
-
-			// name
-			context.font = "12px monospace";
-			context.fillStyle = "black";
-			context.fillText(
-				entity.name,
-				entity.boundingBox.x + 4,
-				entity.boundingBox.y + 12,
-			);
-
-			context.restore();
+			drawEntity(context, entity, 2, "green", true);
 		});
 
-
 	// draw subject
-
-	// border
-	context.fillStyle = "black";
-	context.fillRect(
-		state.subject.boundingBox.x,
-		state.subject.boundingBox.y,
-		state.subject.boundingBox.width,
-		state.subject.boundingBox.height,
-	);
-
-	// body
-	context.fillStyle = "blue";
-	context.fillRect(
-		state.subject.boundingBox.x + 1,
-		state.subject.boundingBox.y + 1,
-		state.subject.boundingBox.width - 2,
-		state.subject.boundingBox.height - 2,
-	);
+	drawEntity(context, state.subject, 1, "blue", false);
 
 
 	// draw subject info text
