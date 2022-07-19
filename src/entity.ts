@@ -33,6 +33,10 @@ class Entity {
 
 		this.controller = controller;
 	}
+
+	toggleNoclip() {
+		this.noclip = !(this.noclip);
+	}
 }
 
 
