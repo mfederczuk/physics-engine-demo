@@ -1,4 +1,4 @@
-function drawState(state: Readonly<State>, context: CanvasRenderingContext2D, fps: number) {
+function drawFrame(context: CanvasRenderingContext2D, state: Readonly<State>, fps: number) {
 	const canvas: HTMLCanvasElement = context.canvas;
 
 	// clear canvas
@@ -194,7 +194,7 @@ window.onload = () => {
 		adjustBounds();
 
 		updateState(state);
-		drawState(state, context, lastFps);
+		drawFrame(context, state, lastFps);
 		++frameCount;
 
 		window.requestAnimationFrame(frameCallback);
