@@ -127,6 +127,7 @@ class WebKeyboardController extends Controller {
 
 	jumpActive(): boolean {
 		const jump = this.#jump;
+		// TODO: query methods should be read-only, gotta find a better way to do this
 		this.#jump = false;
 		return jump;
 	}
@@ -139,17 +140,76 @@ class WebKeyboardController extends Controller {
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 class RandomController extends Controller {
-	static readonly #UP_CHANCE    = 0.1;
-	static readonly #DOWN_CHANCE  = 0.1;
-	static readonly #LEFT_CHANCE  = 0.4;
-	static readonly #RIGHT_CHANCE = 0.4;
-	static readonly #JUMP_CHANCE  = 0.025;
+	static readonly #MIN_TIMEOUT_DELAY_MS = 50;
+	static readonly #CEIL_TIMEOUT_DELAY_MS = 500;
 
-	upActive():    boolean { return (Math.random() < RandomController.#UP_CHANCE); }
-	downActive():  boolean { return (Math.random() < RandomController.#DOWN_CHANCE); }
-	leftActive():  boolean { return (Math.random() < RandomController.#LEFT_CHANCE); }
-	rightActive(): boolean { return (Math.random() < RandomController.#RIGHT_CHANCE); }
-	jumpActive():  boolean { return (Math.random() < RandomController.#JUMP_CHANCE); }
+	static readonly #VERTICAL_CHANCE   = 0.9;
+	static readonly #HORIZONTAL_CHANCE = 0.9;
+	static readonly #JUMP_CHANCE       = 0.3;
+
+	#up: boolean = false;
+	#down: boolean = false;
+	#left: boolean = false;
+	#right: boolean = false;
+	#jump: boolean = false;
+
+	constructor() {
+		super();
+
+		const callback = () => {
+			const verticalMovement = Math.random();
+			const horizontalMovement = Math.random();
+
+			this.#up = (verticalMovement < (RandomController.#VERTICAL_CHANCE / 2));
+			this.#down = ((verticalMovement >= (RandomController.#VERTICAL_CHANCE / 2)) &&
+			              (verticalMovement < RandomController.#VERTICAL_CHANCE));
+
+			this.#left = (horizontalMovement < (RandomController.#HORIZONTAL_CHANCE / 2));
+			this.#right = ((horizontalMovement >= (RandomController.#HORIZONTAL_CHANCE / 2)) &&
+			               (horizontalMovement < RandomController.#HORIZONTAL_CHANCE));
+
+			this.#jump = (Math.random() < RandomController.#JUMP_CHANCE);
+
+			setTimeout(
+				callback,
+				this.#generateRandomTimeoutDelay(),
+			);
+		};
+
+		callback();
+	}
+
+	upActive(): boolean {
+		return this.#up;
+	}
+
+	downActive(): boolean {
+		return this.#down;
+	}
+
+	leftActive(): boolean {
+		return this.#left;
+	}
+
+	rightActive(): boolean {
+		return this.#right;
+	}
+
+	jumpActive(): boolean {
+		const jump = this.#jump;
+		// TODO: query methods should be read-only, gotta find a better way to do this
+		this.#jump = false;
+		return jump;
+	}
+
+	#generateRandomTimeoutDelay(): number {
+		const range = (RandomController.#CEIL_TIMEOUT_DELAY_MS - RandomController.#MIN_TIMEOUT_DELAY_MS);
+		return (Math.random() * range) + RandomController.#MIN_TIMEOUT_DELAY_MS;
+	}
+
+	#chance(chance: number): boolean {
+		return (Math.random() < chance);
+	}
 }
 
 /**
