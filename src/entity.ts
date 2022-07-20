@@ -10,9 +10,9 @@ class Entity {
 
 	controller: Controller;
 
-	readonly velocity: Vector2D        = new Vector2D();
-	readonly forces:   ForceCollection = new ForceCollection();
-	         noclip:   boolean         = false; // dunno why i added this, seemed like fun lol
+	readonly velocity: Vector2D                 = new Vector2D();
+	readonly forces:   ForceCollection          = new ForceCollection();
+	readonly #noclip:  ObservableValue<boolean> = new ObservableValue(false);
 
 	constructor(
 		name: string,
@@ -34,8 +34,24 @@ class Entity {
 		this.controller = controller;
 	}
 
+	get noclip(): boolean {
+		return this.#noclip.get();
+	}
+
+	set noclip(value: boolean){
+		this.#noclip.set(value);
+	}
+
 	toggleNoclip() {
 		this.noclip = !(this.noclip);
+	}
+
+	addNoclipChangeListener(...args: [options: AddListenerOptions, listener: Listener<boolean>]) {
+		this.#noclip.addListener(...args);
+	}
+
+	removeNoclipChangeListener(listener: Listener<boolean>) {
+		this.#noclip.removeListener(listener);
 	}
 }
 
