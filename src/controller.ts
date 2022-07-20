@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2022 Michael Federczuk
+ * SPDX-License-Identifier: MPL-2.0 AND Apache-2.0
+ */
+
 /**
  * As the name suggests, a `Controller` object is used to control an entity's movement and action.
  *

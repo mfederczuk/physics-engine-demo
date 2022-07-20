@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2022 Michael Federczuk
+ * SPDX-License-Identifier: MPL-2.0 AND Apache-2.0
+ */
+
 const BOUNDS_FILL_STYLE = "lightskyblue";
 
 const ENTITY_BORDER_FILL_STYLE = "black";

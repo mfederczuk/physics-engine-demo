@@ -1,3 +1,8 @@
+<!--
+  Copyright (c) 2022 Michael Federczuk
+  SPDX-License-Identifier: CC-BY-SA-4.0
+-->
+
 # Simple Physics/Collision Engine Demo #
 
 This is a test/demo/experiment of a very simple physics/collision engine, written in ECMAScript and using HTML5 Canvas'.
@@ -24,6 +29,12 @@ state.subject.velocity.setXdYd(75, -75) // violently fling the subject into the 
 state.subject.jumpSpeed = 50 // give the subject mad hops
 state.subject.manualMovementSpeed = 50 // make the subject 2 fast 4 u
 ```
+
+## License ##
+
+This engine is licensed under both the [**Mozilla Public License 2.0**](LICENSES/MPL-2.0.txt) AND the
+[**Apache License 2.0**](LICENSES/Apache-2.0.txt).  
+For more information about copying and licensing, see the [`COPYING.txt`](COPYING.txt) file.
 
 ---
 

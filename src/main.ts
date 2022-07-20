@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2022 Michael Federczuk
+ * SPDX-License-Identifier: MPL-2.0 AND Apache-2.0
+ */
+
 const CONTROLS_GUIDE_ACTIVE_CLASS_NAME = "controls-guide-active";
 
 

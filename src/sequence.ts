@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2022 Michael Federczuk
+ * SPDX-License-Identifier: MPL-2.0 AND Apache-2.0
+ */
+
 type SequenceNextResult<T> = ({ done: false; element: T; } | { done: true; });
 
 interface SequenceAttributes {
