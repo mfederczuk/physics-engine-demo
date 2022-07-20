@@ -1,0 +1,51 @@
+@keyframes fadeout {
+	from { opacity: 1; }
+	to   { opacity: 0; }
+}
+
+
+.controls-guide {
+	display: none;
+
+	position: fixed;
+
+	top: 14%;
+	right: 14%;
+
+	border: none;
+}
+
+.controls-guide caption {
+	margin-bottom: 1em;
+	text-align: center;
+	caption-side: top;
+}
+
+.controls-guide tr td {
+	padding: 0 0.75em;
+
+	text-align: center;
+	vertical-align: middle;
+}
+
+.controls-guide tr:nth-of-type(2n) td {
+	padding-bottom: 1em;
+}
+
+
+.controls-guide .controls-guide-text {
+	color: rgba(0, 0, 0, 0.9);
+
+	font-size: 1.5em;
+	font-family: monospace;
+}
+
+
+.controls-guide.controls-guide-active {
+	display: unset;
+
+	animation-delay: 6s;
+	animation-duration: 3s;
+	animation-name: fadeout;
+	animation-fill-mode: forwards;
+}
