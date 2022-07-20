@@ -1,4 +1,8 @@
 "use strict";
+/*
+ * Copyright (c) 2022 Michael Federczuk
+ * SPDX-License-Identifier: MPL-2.0 AND Apache-2.0
+ */
 /**
  * Shows an alert and throws an exception, both with `msg`. Use this for fatal errors.
  */

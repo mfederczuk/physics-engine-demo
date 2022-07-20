@@ -1,4 +1,8 @@
 "use strict";
+/*
+ * Copyright (c) 2022 Michael Federczuk
+ * SPDX-License-Identifier: MPL-2.0 AND Apache-2.0
+ */
 var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (receiver, state, kind, f) {
     if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
     if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
@@ -16,17 +20,6 @@ function degreesToRadians(degrees) {
 }
 function radiansToDegrees(radians) {
     return (radians * 180 / Math.PI);
-}
-function isDegreeInSector(deg, minDeg, maxDeg) {
-    deg = keepDegreeInRange(deg);
-    minDeg = keepDegreeInRange(minDeg);
-    maxDeg = keepDegreeInRange(maxDeg);
-    if (maxDeg >= minDeg) {
-        return ((deg >= minDeg) && (deg <= maxDeg));
-    }
-    // special case for when the sector goes through the 0° direction/radius
-    return (((deg >= 0) && (deg <= maxDeg)) ||
-        ((deg >= minDeg) && (deg <= 360)));
 }
 /**
  * A 2-dimensional position/point.
@@ -158,7 +151,7 @@ class Vector2D {
     }
     static sum(vectors) {
         const sum = new Vector2D(0, 0);
-        vectors.forEach((vector) => {
+        vectors.waitForEach((vector) => {
             sum.add(vector);
         });
         return sum;

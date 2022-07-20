@@ -1,30 +1,76 @@
+<!--
+	Copyright (c) 2022 Michael Federczuk
+	SPDX-License-Identifier: MPL-2.0 AND Apache-2.0
+-->
 <!DOCTYPE html>
 <html lang="en">
 	<head>
 		<meta charset="UTF-8" />
 		<title>Simple Physics/Collision Engine Demo</title>
-		<link rel="stylesheet" href="main.css" />
+
+		<link rel="stylesheet" href="css/controls-guide.css" />
+		<link rel="stylesheet" href="css/main.css" />
+
+		<!-- generic utilities -->
 		<script type="application/javascript" src="js/utils.js"></script>
 		<script type="application/javascript" src="js/sequence.js"></script>
+		<script type="application/javascript" src="js/observableValue.js"></script>
+
+		<!-- specialized utilities -->
 		<script type="application/javascript" src="js/geometry2d.js"></script>
+
+		<!-- logic -->
 		<script type="application/javascript" src="js/controller.js"></script>
 		<script type="application/javascript" src="js/forceCollection.js"></script>
 		<script type="application/javascript" src="js/entity.js"></script>
+		<script type="application/javascript" src="js/state.js"></script>
+
+		<!-- graphical -->
+		<script type="application/javascript" src="js/canvas.js"></script>
+
 		<script type="application/javascript" src="js/main.js"></script>
 	</head>
 	<body>
-		<div id="controls-guide">
-			<table>
-				<tr>
-					<td>Left</td>
-					<td>Right</td>
-					<td>Jump</td>
-				</tr>
-				<tr>
-					<td><img src="assets/key_a.png" alt="[A]" /></td>
-					<td><img src="assets/key_d.png" alt="[D]" /></td>
-					<td><img src="assets/key_space.png" alt="[Spacebar]" /></td>
-				</tr>
+		<div>
+			<table id="normal-controls-guide" class="controls-guide">
+				<caption class="controls-guide-text">Controls</caption>
+				<tbody>
+					<tr>
+						<td class="controls-guide-text">Left</td>
+						<td class="controls-guide-text">Right</td>
+						<td class="controls-guide-text">Jump</td>
+					</tr>
+					<tr>
+						<td><img src="assets/key_a.png" alt="[A]" /></td>
+						<td><img src="assets/key_d.png" alt="[D]" /></td>
+						<td><img src="assets/key_space.png" alt="[Spacebar]" /></td>
+					</tr>
+				</tbody>
+			</table>
+			<table id="noclip-controls-guide" class="controls-guide">
+				<caption class="controls-guide-text">Noclip Controls</caption>
+				<tbody>
+					<tr>
+						<td></td>
+						<td class="controls-guide-text">Up</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td></td>
+						<td><img src="assets/key_w.png" alt="[W]" /></td>
+						<td></td>
+					</tr>
+					<tr>
+						<td class="controls-guide-text">Left</td>
+						<td class="controls-guide-text">Down</td>
+						<td class="controls-guide-text">Right</td>
+					</tr>
+					<tr>
+						<td><img src="assets/key_a.png" alt="[A]" /></td>
+						<td><img src="assets/key_s.png" alt="[S]" /></td>
+						<td><img src="assets/key_d.png" alt="[D]" /></td>
+					</tr>
+				</tbody>
 			</table>
 		</div>
 
