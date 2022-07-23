@@ -47,13 +47,10 @@ class ForceCollection {
 	}
 
 	#markOneAsRemoved(type: ForceType) {
-		const obj: ({ readonly force: Vector2D; markedAsRemoved: boolean; } | undefined) = this.#forceMap.get(type);
-
-		if(typeof(obj) !== "object") {
-			return;
-		}
-
-		obj.markedAsRemoved = true;
+		Optional.ofNullable(this.#forceMap.get(type))
+			.ifPresent((obj: { readonly force: Vector2D; markedAsRemoved: boolean; }) => {
+				obj.markedAsRemoved = true;
+			});
 	}
 
 	//#endregion
@@ -61,10 +58,10 @@ class ForceCollection {
 	//#region blocking
 
 	block(type: ForceType, reason: ForceBlockReason) {
-		const types: (Set<ForceType> | undefined) = this.#blocks.get(reason);
+		const typeSetOptional: Optional<Set<ForceType>> = Optional.ofNullable(this.#blocks.get(reason));
 
-		if(types instanceof Set) {
-			types.add(type);
+		if(typeSetOptional.isPresent()) {
+			typeSetOptional.value.add(type);
 			return;
 		}
 
@@ -91,44 +88,38 @@ class ForceCollection {
 
 	//#region queries
 
-	getOrElse<T>(type: ForceType, defaultValueSupplier: (type: ForceType) => T): (Vector2D | T) {
-		const obj: (Readonly<{ force: Vector2D; markedAsRemoved: boolean; }> | undefined) = this.#forceMap.get(type);
+	getOptional(type: ForceType): Optional<Vector2D> {
+		return Optional.ofNullable(this.#forceMap.get(type))
+			.filterOut(({ markedAsRemoved }) => (markedAsRemoved))
+			.filter(() => {
+				for(const blockedTypes of this.#blocks.values()) {
+					if(blockedTypes.has(type)) {
+						return false;
+					}
+				}
 
-		if((typeof(obj) !== "object") || obj.markedAsRemoved) {
-			return defaultValueSupplier(type);
-		}
-
-		for(const blockedTypes of this.#blocks.values()) {
-			if(blockedTypes.has(type)) {
-				return defaultValueSupplier(type);
-			}
-		}
-
-		return obj.force;
+				return true;
+			})
+			.map(({ force }) => (force));
 	}
 
 	get(type: ForceType): (Vector2D | never) {
-		return this
-			.getOrElse(
-				type,
-				() => { throw Error(`No such force with type: ${type}`); }
-			);
+		return this.getOptional(type)
+			.getOrThrow(() => Error(`No such force with type: ${type}`));
 	}
 
-	getOrDefault<T>(type: ForceType, defaultValue: T): (Vector2D | T) {
-		return this.getOrElse(type, () => (defaultValue));
+	getOrDefault<T extends NotNullable>(type: ForceType, defaultValue: T): (Vector2D | T) {
+		return this.getOptional(type)
+			.getOrDefault(defaultValue);
 	}
 
-	getOrNull(type: ForceType): (Vector2D | null) {
-		return this.getOrDefault(type, null);
-	}
-
-	getOrUndefined(type: ForceType): (Vector2D | undefined) {
-		return this.getOrDefault(type, undefined);
+	getOrElse<T extends NotNullable>(type: ForceType, defaultValueSupplier: () => T): (Vector2D | T) {
+		return this.getOptional(type)
+			.getOrElse(defaultValueSupplier);
 	}
 
 	contains(type: ForceType): boolean {
-		return (this.getOrNull(type) !== null);
+		return this.getOptional(type).isPresent();
 	}
 
 	//#endregion

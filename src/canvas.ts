@@ -170,15 +170,16 @@ function drawFrame(context: CanvasRenderingContext2D, state: Readonly<State>, fp
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function initCanvas(): [HTMLCanvasElement, CanvasRenderingContext2D] {
-	const canvas: (HTMLCanvasElement | null) = document.getElementById("main-canvas") as (HTMLCanvasElement | null);
-	if(canvas === null) {
-		error("Canvas (#main-canvas) not found");
-	}
+	const canvasOptional: Optional<HTMLCanvasElement> =
+		Optional.ofNullable(document.getElementById("main-canvas") as (HTMLCanvasElement | null));
 
-	const context: (CanvasRenderingContext2D | null) = canvas.getContext("2d");
-	if(context === null) {
+	const canvas: HTMLCanvasElement = canvasOptional.getOrElse(() => error("Canvas (#main-canvas) not found"));
+
+	const contextOptional: Optional<CanvasRenderingContext2D> =  Optional.ofNullable(canvas.getContext("2d"));
+
+	if(contextOptional.isEmpty()) {
 		error("Canvas unsupported");
 	}
 
-	return [canvas, context];
+	return [canvas, contextOptional.value];
 }

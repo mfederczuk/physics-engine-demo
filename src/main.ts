@@ -17,15 +17,11 @@ state.addNewEntity("Wug",  new Box2D(0, 0, 30, 125), 5, undefined, undefined, un
 
 
 window.onload = () => {
-	const normalControlsGuide: (HTMLElement | null) = document.getElementById("normal-controls-guide");
-	const noclipControlsGuide: (HTMLElement | null) = document.getElementById("noclip-controls-guide");
+	const normalControlsGuide: HTMLElement = Optional.ofNullable(document.getElementById("normal-controls-guide"))
+		.getOrThrow(() => new Error("Normal controls guide table (#normal-controls-guide) not found"));
 
-	if(normalControlsGuide === null) {
-		error("Normal controls guide table (#normal-controls-guide) not found");
-	}
-	if(noclipControlsGuide === null) {
-		error("Noclip controls guide table (#noclip-controls-guide) not found");
-	}
+	const noclipControlsGuide: HTMLElement = Optional.ofNullable(document.getElementById("noclip-controls-guide"))
+		.getOrThrow(() => new Error("Noclip controls guide table (#noclip-controls-guide) not found"));
 
 
 	const [canvas, context]: [HTMLCanvasElement, CanvasRenderingContext2D] = initCanvas();

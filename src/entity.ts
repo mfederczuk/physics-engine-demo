@@ -89,7 +89,7 @@ class EntityCollection {
 	}
 
 	contains(entity: Entity): boolean {
-		return (this.lookupIdOrNull(entity) !== null);
+		return this.lookupIdOptional(entity).isPresent();
 	}
 
 	//#region remove*
@@ -99,105 +99,83 @@ class EntityCollection {
 	}
 
 	remove(entity: Entity) {
-		const id: (EntityId | null) = this.lookupIdOrNull(entity);
+		const id: Optional<EntityId> = this.lookupIdOptional(entity);
 
-		if(typeof(id) !== "number") {
-			return;
-		}
-
-		this.removeById(id);
+		id.ifPresent(this.removeById.bind(this));
 	}
 
 	//#endregion
 
 	//#region lookupId*
 
-	lookupIdOrElse<T>(entity: Entity, defaultValueSupplier: () => T): (EntityId | T) {
+	lookupIdOptional(entity: Entity): Optional<EntityId> {
 		return this.sequence()
 			.filter((entityWithId: EntityWithId) => (entityWithId.entity === entity))
 			.map(({ id }: EntityWithId) => (id))
-			.waitForSingleOrElse(defaultValueSupplier);
-	}
-
-	lookupIdOrDefault<T>(entity: Entity, defaultValue: T): (EntityId | T) {
-		return this.lookupIdOrElse(entity,  () => (defaultValue));
+			.waitForSingleOptional();
 	}
 
 	lookupId(entity: Entity): (EntityId | never) {
-		return this.lookupIdOrElse(
-			entity,
-			() => { throw new Error(`No such entity ${entity}`); },
-		);
+		return this.lookupIdOptional(entity)
+			.getOrThrow(() => new Error(`No such entity ${entity}`));
 	}
 
-	lookupIdOrNull(entity: Entity): (EntityId | null) {
-		return this.lookupIdOrDefault(entity, null);
+	lookupIdOrDefault<T extends NotNullable>(entity: Entity, defaultValue: T): (EntityId | T) {
+		return this.lookupIdOptional(entity)
+			.getOrDefault(defaultValue);
 	}
 
-	lookupIdOrUndefined(entity: Entity): (EntityId | undefined) {
-		return this.lookupIdOrDefault(entity, undefined);
+	lookupIdOrElse<T extends NotNullable>(entity: Entity, defaultValueSupplier: () => T): (EntityId | T) {
+		return this.lookupIdOptional(entity)
+			.getOrElse(defaultValueSupplier);
 	}
 
 	//#endregion
 
 	//#region getById*
 
-	getByIdOrElse<T>(id: EntityId, defaultValueSupplier: () => T): (Entity | T) {
-		const entity: (Entity | undefined) = this.#entityMap.get(id);
-
-		if(entity instanceof Entity) {
-			return entity;
-		}
-
-		return defaultValueSupplier();
-	}
-
-	getByIdOrDefault<T>(id: EntityId, defaultValue: T): (Entity | T) {
-		return this.getByIdOrElse(id, () => (defaultValue));
+	getByIdOptional(id: EntityId): Optional<Entity> {
+		return Optional.ofNullable(this.#entityMap.get(id));
 	}
 
 	getById(id: EntityId): (Entity | never) {
-		return this.getByIdOrElse(
-			id,
-			() => { throw new Error(`No such entity with ID ${id}`); },
-		);
+		return this.getByIdOptional(id)
+			.getOrThrow(() => new Error(`No such entity with ID ${id}`));
 	}
 
-	getByIdOrNull(id: EntityId): (Entity | null) {
-		return this.getByIdOrDefault(id, null);
+	getByIdOrDefault<T extends NotNullable>(id: EntityId, defaultValue: T): (Entity | T) {
+		return this.getByIdOptional(id)
+			.getOrDefault(defaultValue);
 	}
 
-	getByIdOrUndefined(id: EntityId): (Entity | undefined) {
-		return this.getByIdOrDefault(id, undefined);
+	getByIdOrElse<T extends NotNullable>(id: EntityId, defaultValueSupplier: () => T): (Entity | T) {
+		return this.getByIdOptional(id)
+			.getOrElse(defaultValueSupplier);
 	}
 
 	//#endregion
 
 	//#region findFirstByName*
 
-	findFirstByNameOrElse<T>(name: string, defaultValueSupplier: () => T): (EntityWithId | T) {
+	findFirstByNameOptional(name: string): Optional<EntityWithId> {
 		return this.sequence()
 			.filter(({ entity }: EntityWithId) => (entity.name === name))
-			.waitForFirstOrElse(defaultValueSupplier);
-	}
-
-	findFirstByNameOrDefault<T>(name: string, defaultValue: T): (EntityWithId | T) {
-		return this.findFirstByNameOrElse(name, () => (defaultValue));
+			.waitForFirstOptional();
 	}
 
 	findFirstByName(name: string): (EntityWithId | never) {
-		return this.findFirstByNameOrElse(
-			name,
-			() => { throw new Error(`No such entity with name "${name}"`); }
-		);
+		return this.findFirstByNameOptional(name)
+			.getOrThrow(() => new Error(`No such entity with name "${name}"`));
 	}
 
-	findFirstByNameOrNull(name: string): (EntityWithId | null) {
-		return this.findFirstByNameOrDefault(name, null);
+	findFirstByNameOrDefault<T extends NotNullable>(name: string, defaultValue: T): (EntityWithId | T) {
+		return this.findFirstByNameOptional(name)
+			.getOrDefault(defaultValue);
 	}
 
-	findFirstByNameOrUndefined(name: string): (EntityWithId | undefined) {
-		return this.findFirstByNameOrDefault(name, undefined);
+	findFirstByNameOrElse<T extends NotNullable>(name: string, defaultValueSupplier: () => T): (EntityWithId | T) {
+		return this.findFirstByNameOptional(name)
+			.getOrElse(defaultValueSupplier);
 	}
 
 	//#endregion

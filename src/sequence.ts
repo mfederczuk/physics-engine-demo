@@ -3,13 +3,13 @@
  * SPDX-License-Identifier: MPL-2.0 AND Apache-2.0
  */
 
-type SequenceNextResult<T> = ({ done: false; element: T; } | { done: true; });
+type SequenceNextResult<T extends NotNullable> = ({ done: false; element: T; } | { done: true; });
 
 interface SequenceAttributes {
 	neverDone: boolean;
 }
 
-abstract class Sequence<T> {
+abstract class Sequence<T extends NotNullable> {
 
 	abstract next(): SequenceNextResult<T>;
 
@@ -17,23 +17,23 @@ abstract class Sequence<T> {
 
 	//#region factory functions
 
-	static empty<T = never>(): Sequence<T> {
+	static empty<T extends NotNullable = never>(): Sequence<T> {
 		return new EmptySequence();
 	}
 
-	static generate<T>(n: number, generator: (index: number) => T): Sequence<T> {
+	static generate<T extends NotNullable>(n: number, generator: (index: number) => T): Sequence<T> {
 		return new GeneratedSequence(generator, n);
 	}
 
-	static generateForever<T>(generator: (index: number) => T): Sequence<T> {
+	static generateForever<T extends NotNullable>(generator: (index: number) => T): Sequence<T> {
 		return this.generate(Infinity, generator);
 	}
 
-	static repeatElement<T>(element: T, n: number): Sequence<T> {
+	static repeatElement<T extends NotNullable>(element: T, n: number): Sequence<T> {
 		return this.generate(n, () => (element));
 	}
 
-	static repeatElementForever<T>(element: T): Sequence<T> {
+	static repeatElementForever<T extends NotNullable>(element: T): Sequence<T> {
 		return this.generateForever(() => (element));
 	}
 
@@ -43,19 +43,19 @@ abstract class Sequence<T> {
 
 	//#region from*
 
-	static fromArray<T>(array: readonly T[]): Sequence<T> {
+	static fromArray<T extends NotNullable>(array: readonly T[]): Sequence<T> {
 		return new SequenceFromArray(array);
 	}
 
-	static from<T>(...elements: readonly [T, ...T[]]): Sequence<T> {
+	static from<T extends NotNullable>(...elements: readonly [T, ...T[]]): Sequence<T> {
 		return new SequenceFromArray(elements);
 	}
 
-	static fromIterator<T>(iterator: Iterator<T>): Sequence<T> {
+	static fromIterator<T extends NotNullable>(iterator: Iterator<T>): Sequence<T> {
 		return new SequenceFromIterator(iterator);
 	}
 
-	static fromIterable<T>(iterable: Iterable<T>): Sequence<T> {
+	static fromIterable<T extends NotNullable>(iterable: Iterable<T>): Sequence<T> {
 		return new SequenceFromIterable(iterable);
 	}
 
@@ -63,34 +63,34 @@ abstract class Sequence<T> {
 
 	//#region merge*
 
-	static mergeFromSequence<T>(sequencesSequence: Sequence<Sequence<T>>): Sequence<T> {
+	static mergeFromSequence<T extends NotNullable>(sequencesSequence: Sequence<Sequence<T>>): Sequence<T> {
 		return new MergedSequence(sequencesSequence);
 	}
 
-	static mergeFromArray<T>(sequences: readonly Sequence<T>[]): Sequence<T> {
+	static mergeFromArray<T extends NotNullable>(sequences: readonly Sequence<T>[]): Sequence<T> {
 		return this.mergeFromSequence(Sequence.fromArray(sequences));
 	}
 
-	static merge<T>(...sequences: readonly [Sequence<T>, ...Sequence<T>[]]) {
+	static merge<T extends NotNullable>(...sequences: readonly [Sequence<T>, ...Sequence<T>[]]) {
 		return this.mergeFromSequence(Sequence.fromArray(sequences));
 	}
 
-	static mergeFromIterator<T>(iterator: Iterator<Sequence<T>>): Sequence<T> {
+	static mergeFromIterator<T extends NotNullable>(iterator: Iterator<Sequence<T>>): Sequence<T> {
 		return Sequence.mergeFromSequence(Sequence.fromIterator(iterator));
 	}
 
-	static mergeIterators<T>(...iterators: readonly [Iterator<Sequence<T>>, Iterator<Sequence<T>>, ...Iterator<Sequence<T>>[]]): Sequence<T> {
+	static mergeIterators<T extends NotNullable>(...iterators: readonly [Iterator<Sequence<T>>, Iterator<Sequence<T>>, ...Iterator<Sequence<T>>[]]): Sequence<T> {
 		return Sequence
 			.fromArray(iterators)
 			.flatMap(Sequence.fromIterator)
 			.flatten();
 	}
 
-	static mergeFromIterable<T>(iterable: Iterable<Sequence<T>>): Sequence<T> {
+	static mergeFromIterable<T extends NotNullable>(iterable: Iterable<Sequence<T>>): Sequence<T> {
 		return Sequence.mergeFromSequence(Sequence.fromIterable(iterable));
 	}
 
-	static mergeIterables<T>(...iterables: readonly [Iterable<Sequence<T>>, Iterable<Sequence<T>>, ...Iterable<Sequence<T>>[]]) {
+	static mergeIterables<T extends NotNullable>(...iterables: readonly [Iterable<Sequence<T>>, Iterable<Sequence<T>>, ...Iterable<Sequence<T>>[]]) {
 		return Sequence
 			.fromArray(iterables)
 			.flatMap(Sequence.fromIterable)
@@ -105,15 +105,15 @@ abstract class Sequence<T> {
 		return new FilteredSequence(this, predicate);
 	}
 
-	map<R>(mapper: (element: T) => R): Sequence<R> {
+	map<R extends NotNullable>(mapper: (element: T) => R): Sequence<R> {
 		return new MappedSequence(this, mapper);
 	}
 
-	flatMap<R>(mapper: (element: T) => Sequence<R>): Sequence<R> {
+	flatMap<R extends NotNullable>(mapper: (element: T) => Sequence<R>): Sequence<R> {
 		return new FlatMappedSequence(this, mapper);
 	}
 
-	flatten<T>(this: Sequence<Sequence<T>>): Sequence<T> {
+	flatten<T extends NotNullable>(this: Sequence<Sequence<T>>): Sequence<T> {
 		return new FlattenedSequence(this);
 	}
 
@@ -214,43 +214,42 @@ abstract class Sequence<T> {
 		}
 	}
 
-	//#region first*
+	//#region waitForFirst*
 
-	waitForFirstOrElse<U>(defaultValueSupplier: () => U): (T | U | never) {
+	waitForFirstOptional(): Optional<T> {
 		const result: SequenceNextResult<T> = this.next();
 
 		if(result.done) {
-			return defaultValueSupplier();
+			return Optional.empty();
 		}
 
-		return result.element;
-	}
-
-	waitForFirstOrDefault<U>(defaultValue: U): (T | U | never) {
-		return this.waitForFirstOrElse(() => (defaultValue));
+		return Optional.of(result.element);
 	}
 
 	waitForFirst(): (T | never) {
-		return this.waitForFirstOrElse(() => { throw new Error("Empty sequence"); });
+		return this.waitForFirstOptional()
+			.getOrThrow(() => new Error("Empty sequence"));
 	}
 
-	waitForFirstOrNull(): (T | null | never) {
-		return this.waitForFirstOrDefault(null);
+	waitForFirstOrDefault<U extends NotNullable>(defaultValue: U): (T | U | never) {
+		return this.waitForFirstOptional()
+			.getOrDefault(defaultValue);
 	}
 
-	waitForFirstOrUndefined(): (T | undefined | never) {
-		return this.waitForFirstOrDefault(undefined);
+	waitForFirstOrElse<U extends NotNullable>(defaultValueSupplier: () => U): (T | U | never) {
+		return this.waitForFirstOptional()
+			.getOrElse(defaultValueSupplier);
 	}
 
 	//#endregion
 
-	//#region single*
+	//#region waitForFirst*
 
-	waitForSingleOrElse<U>(defaultValueSupplier: () => U): (T | U | never) {
+	waitForSingleOptional(): (Optional<T> | never) {
 		let result: SequenceNextResult<T> = this.next();
 
 		if(result.done) {
-			return defaultValueSupplier();
+			return Optional.empty();
 		}
 
 		const element: T = result.element;
@@ -258,26 +257,25 @@ abstract class Sequence<T> {
 		result = this.next();
 
 		if(result.done) {
-			return element;
+			return Optional.of(element);
 		}
 
 		throw new Error("Multiple elements in sequence");
 	}
 
-	waitForSingleOrDefault<U>(defaultValue: U): (T | U | never) {
-		return this.waitForSingleOrElse(() => (defaultValue));
-	}
-
 	waitForSingle(): (T | never) {
-		return this.waitForSingleOrElse(() => { throw new Error("Empty sequence"); });
+		return this.waitForSingleOptional()
+			.getOrThrow(() => new Error("Empty sequence"));
 	}
 
-	waitForSingleOrNull(): (T | null | never) {
-		return this.waitForSingleOrDefault(null);
+	waitForSingleOrDefault<U extends NotNullable>(defaultValue: U): (T | U | never) {
+		return this.waitForSingleOptional()
+			.getOrDefault(defaultValue);
 	}
 
-	waitForSingleOrUndefined(): (T | undefined | never) {
-		return this.waitForSingleOrDefault(undefined);
+	waitForSingleOrElse<U>(defaultValueSupplier: () => U): (T | U | never) {
+		return this.waitForSingleOptional()
+			.getOrElse(defaultValueSupplier);
 	}
 
 	//#endregion
@@ -316,7 +314,7 @@ class EmptySequence extends Sequence<never> {
 	}
 }
 
-class GeneratedSequence<T> extends Sequence<T> {
+class GeneratedSequence<T extends NotNullable> extends Sequence<T> {
 
 	#currentIndex: number = 0;
 
@@ -378,7 +376,7 @@ class IntRangeSequence extends Sequence<number> {
 	}
 }
 
-class SequenceFromArray<T> extends Sequence<T> {
+class SequenceFromArray<T extends NotNullable> extends Sequence<T> {
 
 	#index: number = 0;
 
@@ -407,7 +405,7 @@ class SequenceFromArray<T> extends Sequence<T> {
 	}
 }
 
-class SequenceFromIterator<T> extends Sequence<T> {
+class SequenceFromIterator<T extends NotNullable> extends Sequence<T> {
 
 	constructor(
 		readonly iterator: Iterator<T>,
@@ -432,7 +430,7 @@ class SequenceFromIterator<T> extends Sequence<T> {
 	}
 }
 
-class SequenceFromIterable<T> extends SequenceFromIterator<T> {
+class SequenceFromIterable<T extends NotNullable> extends SequenceFromIterator<T> {
 
 	constructor(
 		iterable: Iterable<T>,
@@ -441,9 +439,9 @@ class SequenceFromIterable<T> extends SequenceFromIterator<T> {
 	}
 }
 
-class MergedSequence<T> extends Sequence<T> {
+class MergedSequence<T extends NotNullable> extends Sequence<T> {
 
-	#currentSequence: (Sequence<T> | null) = null;
+	#currentSequence: Optional<Sequence<T>> = Optional.empty();
 
 	constructor(
 		readonly sequencesSequence: Sequence<Sequence<T>>,
@@ -452,8 +450,8 @@ class MergedSequence<T> extends Sequence<T> {
 	}
 
 	next(): SequenceNextResult<T> {
-		if(this.#currentSequence instanceof Sequence) {
-			const result: SequenceNextResult<T> = this.#currentSequence.next();
+		if(this.#currentSequence.isPresent()) {
+			const result: SequenceNextResult<T> = this.#currentSequence.value.next();
 
 			if(!(result.done)) {
 				return result;
@@ -466,7 +464,7 @@ class MergedSequence<T> extends Sequence<T> {
 			return result;
 		}
 
-		this.#currentSequence = result.element;
+		this.#currentSequence = Optional.of(result.element);
 		return this.next();
 	}
 
@@ -475,7 +473,7 @@ class MergedSequence<T> extends Sequence<T> {
 	}
 }
 
-abstract class SequenceWithSource<T, R = T> extends Sequence<R> {
+abstract class SequenceWithSource<T extends NotNullable, R extends NotNullable = T> extends Sequence<R> {
 
 	constructor(
 		readonly source: Sequence<T>,
@@ -488,7 +486,7 @@ abstract class SequenceWithSource<T, R = T> extends Sequence<R> {
 	}
 }
 
-class FilteredSequence<T> extends SequenceWithSource<T> {
+class FilteredSequence<T extends NotNullable> extends SequenceWithSource<T> {
 
 	constructor(
 		source: Sequence<T>,
@@ -508,7 +506,7 @@ class FilteredSequence<T> extends SequenceWithSource<T> {
 	}
 }
 
-class MappedSequence<T, R> extends SequenceWithSource<T, R> {
+class MappedSequence<T extends NotNullable, R extends NotNullable> extends SequenceWithSource<T, R> {
 
 	constructor(
 		source: Sequence<T>,
@@ -529,9 +527,9 @@ class MappedSequence<T, R> extends SequenceWithSource<T, R> {
 	}
 }
 
-class FlatMappedSequence<T, R> extends SequenceWithSource<T, R> {
+class FlatMappedSequence<T extends NotNullable, R extends NotNullable> extends SequenceWithSource<T, R> {
 
-	#currentSequence: (Sequence<R> | null) = null;
+	#currentSequence: Optional<Sequence<R>> = Optional.empty();
 
 	constructor(
 		source: Sequence<T>,
@@ -541,8 +539,8 @@ class FlatMappedSequence<T, R> extends SequenceWithSource<T, R> {
 	}
 
 	next(): SequenceNextResult<R> {
-		if(this.#currentSequence instanceof Sequence) {
-			const result: SequenceNextResult<R> = this.#currentSequence.next();
+		if(this.#currentSequence.isPresent()) {
+			const result: SequenceNextResult<R> = this.#currentSequence.value.next();
 
 			if(!(result.done)) {
 				return result;
@@ -555,14 +553,14 @@ class FlatMappedSequence<T, R> extends SequenceWithSource<T, R> {
 			return sourceResult;
 		}
 
-		this.#currentSequence = this.mapper(sourceResult.element);
+		this.#currentSequence = Optional.of(this.mapper(sourceResult.element));
 		return this.next();
 	}
 }
 
-class FlattenedSequence<T> extends SequenceWithSource<Sequence<T>, T> {
+class FlattenedSequence<T extends NotNullable> extends SequenceWithSource<Sequence<T>, T> {
 
-	#currentSequence: (Sequence<T> | null) = null;
+	#currentSequence: Optional<Sequence<T>> = Optional.empty();
 
 	constructor(
 		source: Sequence<Sequence<T>>,
@@ -571,8 +569,8 @@ class FlattenedSequence<T> extends SequenceWithSource<Sequence<T>, T> {
 	}
 
 	next(): SequenceNextResult<T> {
-		if(this.#currentSequence instanceof Sequence) {
-			const result: SequenceNextResult<T> = this.#currentSequence.next();
+		if(this.#currentSequence.isPresent()) {
+			const result: SequenceNextResult<T> = this.#currentSequence.value.next();
 
 			if(!(result.done)) {
 				return result;
@@ -585,12 +583,12 @@ class FlattenedSequence<T> extends SequenceWithSource<Sequence<T>, T> {
 			return sourceResult;
 		}
 
-		this.#currentSequence = sourceResult.element;
+		this.#currentSequence = Optional.of(sourceResult.element);
 		return this.next();
 	}
 }
 
-class NTakenSequence<T> extends SequenceWithSource<T> {
+class NTakenSequence<T extends NotNullable> extends SequenceWithSource<T> {
 
 	#taken: number = 0;
 
@@ -624,7 +622,7 @@ class NTakenSequence<T> extends SequenceWithSource<T> {
 	}
 }
 
-class NSkippedSequence<T> extends SequenceWithSource<T> {
+class NSkippedSequence<T extends NotNullable> extends SequenceWithSource<T> {
 
 	#skipped: number = 0;
 
@@ -651,7 +649,7 @@ class NSkippedSequence<T> extends SequenceWithSource<T> {
 	}
 }
 
-class SortedSequence<T> extends SequenceWithSource<T> {
+class SortedSequence<T extends NotNullable> extends SequenceWithSource<T> {
 
 	#sortedArray: readonly T[] = [];
 	#index: number = -1;
@@ -684,7 +682,7 @@ class SortedSequence<T> extends SequenceWithSource<T> {
 	}
 }
 
-class IsEmptySequence<T> extends SequenceWithSource<T, boolean> {
+class IsEmptySequence<T extends NotNullable> extends SequenceWithSource<T, boolean> {
 
 	#done: boolean = false;
 
@@ -710,7 +708,7 @@ class IsEmptySequence<T> extends SequenceWithSource<T, boolean> {
 	}
 }
 
-class ActionOnEachElementSequence<T> extends SequenceWithSource<T> {
+class ActionOnEachElementSequence<T extends NotNullable> extends SequenceWithSource<T> {
 
 	constructor(
 		source: Sequence<T>,
@@ -730,7 +728,7 @@ class ActionOnEachElementSequence<T> extends SequenceWithSource<T> {
 	}
 }
 
-class SequenceAsIterator<T> implements Iterator<T, undefined, unknown> {
+class SequenceAsIterator<T extends NotNullable> implements Iterator<T, undefined, unknown> {
 
 	constructor(
 		readonly sequence: Sequence<T>,
@@ -749,7 +747,7 @@ class SequenceAsIterator<T> implements Iterator<T, undefined, unknown> {
 	}
 }
 
-class SequenceAsIterable<T> implements Iterable<T> {
+class SequenceAsIterable<T extends NotNullable> implements Iterable<T> {
 
 	constructor(
 		readonly sequence: Sequence<T>,

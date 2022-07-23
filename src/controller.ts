@@ -20,7 +20,7 @@ abstract class Controller {
  * A `Controller` implementation that doesn't do anything; all `*Active` methods will always return `false`.
  *
  * It is used as default value, when no other controller is given to avoid having the controller field in `Entity`s be
- * nullable.
+ * optional.
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 class DummyController extends Controller {
