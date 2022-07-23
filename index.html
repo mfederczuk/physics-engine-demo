@@ -11,6 +11,18 @@
 		<link rel="stylesheet" href="css/controls-guide.css" />
 		<link rel="stylesheet" href="css/main.css" />
 
+		<script type="application/javascript">
+			window.onerror = (message, _source, _lineno, _colno, error) => {
+				if(error instanceof Error) {
+					message = error.message;
+				}
+
+				if(typeof(message) === "string") {
+					alert(message);
+				}
+			};
+		</script>
+
 		<!-- generic utilities -->
 		<script type="application/javascript" src="js/utils.js"></script>
 		<script type="application/javascript" src="js/optional.js"></script>

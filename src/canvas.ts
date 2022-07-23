@@ -173,13 +173,10 @@ function initCanvas(): [HTMLCanvasElement, CanvasRenderingContext2D] {
 	const canvasOptional: Optional<HTMLCanvasElement> =
 		Optional.ofNullable(document.getElementById("main-canvas") as (HTMLCanvasElement | null));
 
-	const canvas: HTMLCanvasElement = canvasOptional.getOrElse(() => error("Canvas (#main-canvas) not found"));
+	const canvas: HTMLCanvasElement = canvasOptional.getOrThrow(() => new Error("Canvas (#main-canvas) not found"));
 
-	const contextOptional: Optional<CanvasRenderingContext2D> =  Optional.ofNullable(canvas.getContext("2d"));
+	const context: CanvasRenderingContext2D = Optional.ofNullable(canvas.getContext("2d"))
+		.getOrThrow(() => new Error("Canvas unsupported"));
 
-	if(contextOptional.isEmpty()) {
-		error("Canvas unsupported");
-	}
-
-	return [canvas, contextOptional.value];
+	return [canvas, context];
 }
