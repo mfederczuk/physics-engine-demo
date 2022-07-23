@@ -165,7 +165,7 @@ class EntityCollection {
 
 	findFirstByName(name: string): (EntityWithId | never) {
 		return this.findFirstByNameOptional(name)
-			.getOrThrow(() => new Error(`No such entity with name "${name}"`));
+			.getOrThrow(() => new Error(`No such entity with name ${name.quote()}`));
 	}
 
 	findFirstByNameOrDefault<T extends NotNullable>(name: string, defaultValue: T): (EntityWithId | T) {
