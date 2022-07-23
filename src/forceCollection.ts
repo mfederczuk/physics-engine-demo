@@ -105,7 +105,7 @@ class ForceCollection {
 
 	get(type: ForceType): (Vector2D | never) {
 		return this.getOptional(type)
-			.getOrThrow(() => Error(`No such force with type: ${type}`));
+			.getOrThrow(() => new Error(`No such force with type: ${type}`));
 	}
 
 	getOrDefault<T extends NotNullable>(type: ForceType, defaultValue: T): (Vector2D | T) {
