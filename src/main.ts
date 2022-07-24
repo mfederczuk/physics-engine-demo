@@ -59,19 +59,21 @@ window.onload = () => {
 	normalControlsGuide.onanimationend = () => normalControlsGuide.classList.remove(CONTROLS_GUIDE_ACTIVE_CLASS_NAME);
 	noclipControlsGuide.onanimationend = () => noclipControlsGuide.classList.remove(CONTROLS_GUIDE_ACTIVE_CLASS_NAME);
 
-	state.subject.addNoclipChangeListener({ invokeImmediately: true }, (noclip: boolean) => {
-		if(!(state.subject.controller instanceof WebKeyboardController)) {
-			normalControlsGuide.classList.remove(CONTROLS_GUIDE_ACTIVE_CLASS_NAME);
-			noclipControlsGuide.classList.remove(CONTROLS_GUIDE_ACTIVE_CLASS_NAME);
-			return;
-		}
+	state.subject.noclipObservable().subscribe({
+		onNext: (noclip: boolean) => {
+			if(!(state.subject.controller instanceof WebKeyboardController)) {
+				normalControlsGuide.classList.remove(CONTROLS_GUIDE_ACTIVE_CLASS_NAME);
+				noclipControlsGuide.classList.remove(CONTROLS_GUIDE_ACTIVE_CLASS_NAME);
+				return;
+			}
 
-		if(!noclip) {
-			normalControlsGuide.classList.add(CONTROLS_GUIDE_ACTIVE_CLASS_NAME);
-			noclipControlsGuide.classList.remove(CONTROLS_GUIDE_ACTIVE_CLASS_NAME);
-		} else {
-			normalControlsGuide.classList.remove(CONTROLS_GUIDE_ACTIVE_CLASS_NAME);
-			noclipControlsGuide.classList.add(CONTROLS_GUIDE_ACTIVE_CLASS_NAME);
+			if(!noclip) {
+				normalControlsGuide.classList.add(CONTROLS_GUIDE_ACTIVE_CLASS_NAME);
+				noclipControlsGuide.classList.remove(CONTROLS_GUIDE_ACTIVE_CLASS_NAME);
+			} else {
+				normalControlsGuide.classList.remove(CONTROLS_GUIDE_ACTIVE_CLASS_NAME);
+				noclipControlsGuide.classList.add(CONTROLS_GUIDE_ACTIVE_CLASS_NAME);
+			}
 		}
 	});
 

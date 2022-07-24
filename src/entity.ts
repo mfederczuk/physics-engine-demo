@@ -51,12 +51,8 @@ class Entity {
 		this.noclip = !(this.noclip);
 	}
 
-	addNoclipChangeListener(...args: [options: AddListenerOptions, listener: Listener<boolean>]) {
-		this.#noclip.addListener(...args);
-	}
-
-	removeNoclipChangeListener(listener: Listener<boolean>) {
-		this.#noclip.removeListener(listener);
+	noclipObservable(): Observable<boolean> {
+		return this.#noclip.hide();
 	}
 }
 
