@@ -7,9 +7,7 @@ const CONTROLS_GUIDE_ACTIVE_CLASS_NAME = "controls-guide-active";
 
 
 // global state so that it can be manipulated using the browser console
-const state = new State();
-
-state.subject.inputManager.setInputSource(
+const state = new State(
 	new DeviceInputSource(
 		new WebKeyboard(window),
 		new SimpleKeyInputMap(),

@@ -126,7 +126,7 @@ class ForceCollection {
 
 	//#region iteration
 
-	forcesSequence(): Sequence<{ type: ForceType; force: Readonly<Vector2D>; markedAsRemoved: boolean; blocked: boolean; }> {
+	sequence(): Sequence<{ type: ForceType; force: Readonly<Vector2D>; markedAsRemoved: boolean; blocked: boolean; }> {
 		const allBlockedTypes: Set<ForceType> = new Set();
 
 		for(const blockedTypes of this.#blocks.values()) {

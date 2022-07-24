@@ -118,7 +118,7 @@ function drawFrame(context: CanvasRenderingContext2D, state: Readonly<State>, fp
 	let forceI = 0;
 	context.save();
 	state.subject.forces
-		.forcesSequence()
+		.sequence()
 		.sort((elementA, elementB) => {
 			const aInactive = (elementA.markedAsRemoved || elementA.blocked);
 			const bInactive = (elementB.markedAsRemoved || elementB.blocked);

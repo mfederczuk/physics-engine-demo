@@ -4,7 +4,9 @@
  */
 
 class State {
-	static readonly SUBJECT_SIZE = 75;
+	static readonly INITIAL_SUBJECT_NAME = "Subject";
+	static readonly INITIAL_SUBJECT_SIZE = 75;
+	static readonly INITIAL_SUBJECT_MASS = 50;
 
 	// TODO: move these into a separate `StateConfig` object?
 	readonly gravity: Vector2D = new Vector2D(0, 0.5);
@@ -17,12 +19,17 @@ class State {
 	readonly entities: EntityCollection = new EntityCollection();
 	readonly subject: Entity;
 
-	constructor() {
+	constructor(initialSubjectInputSource?: InputSource) {
 		this.subject = this
 			.addNewEntity(
-				"Subject",
-				new Box2D(0, 0, State.SUBJECT_SIZE),
-				50
+				State.INITIAL_SUBJECT_NAME,
+				new Box2D(0, 0, State.INITIAL_SUBJECT_SIZE),
+				State.INITIAL_SUBJECT_MASS,
+				undefined,
+				undefined,
+				undefined,
+
+				initialSubjectInputSource,
 			)
 			.entity;
 	}
@@ -59,9 +66,9 @@ class State {
 		name: string,
 		boundingBox: Box2D,
 		mass: number,
-		manualMovementSpeed: number = this.defaultEntityManualMovementSpeed,
-		jumpSpeed: number = this.defaultEntityJumpSpeed,
-		noclipFlySpeed: number = this.defaultEntityNoclipFlySpeed,
+		manualMovementSpeed?: number,
+		jumpSpeed?: number,
+		noclipFlySpeed?: number,
 
 		inputSource?: InputSource,
 	): EntityWithId {
