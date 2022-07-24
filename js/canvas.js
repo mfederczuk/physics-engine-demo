@@ -67,7 +67,7 @@ function drawFrame(context, state, fps) {
     let forceI = 0;
     context.save();
     state.subject.forces
-        .forcesSequence()
+        .sequence()
         .sort((elementA, elementB) => {
         const aInactive = (elementA.markedAsRemoved || elementA.blocked);
         const bInactive = (elementB.markedAsRemoved || elementB.blocked);
@@ -102,13 +102,9 @@ function drawFrame(context, state, fps) {
 }
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function initCanvas() {
-    const canvas = document.getElementById("main-canvas");
-    if (canvas === null) {
-        error("Canvas (#main-canvas) not found");
-    }
-    const context = canvas.getContext("2d");
-    if (context === null) {
-        error("Canvas unsupported");
-    }
+    const canvasOptional = Optional.ofNullable(document.getElementById("main-canvas"));
+    const canvas = canvasOptional.getOrThrow(() => new Error("Canvas (#main-canvas) not found"));
+    const context = Optional.ofNullable(canvas.getContext("2d"))
+        .getOrThrow(() => new Error("Canvas unsupported"));
     return [canvas, context];
 }

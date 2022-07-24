@@ -161,51 +161,51 @@ class Sequence {
             }
         } while (!(result.done));
     }
-    //#region first*
-    waitForFirstOrElse(defaultValueSupplier) {
+    //#region waitForFirst*
+    waitForFirstOptional() {
         const result = this.next();
         if (result.done) {
-            return defaultValueSupplier();
+            return Optional.empty();
         }
-        return result.element;
-    }
-    waitForFirstOrDefault(defaultValue) {
-        return this.waitForFirstOrElse(() => (defaultValue));
+        return Optional.of(result.element);
     }
     waitForFirst() {
-        return this.waitForFirstOrElse(() => { throw new Error("Empty sequence"); });
+        return this.waitForFirstOptional()
+            .getOrThrow(() => new Error("Empty sequence"));
     }
-    waitForFirstOrNull() {
-        return this.waitForFirstOrDefault(null);
+    waitForFirstOrDefault(defaultValue) {
+        return this.waitForFirstOptional()
+            .getOrDefault(defaultValue);
     }
-    waitForFirstOrUndefined() {
-        return this.waitForFirstOrDefault(undefined);
+    waitForFirstOrElse(defaultValueSupplier) {
+        return this.waitForFirstOptional()
+            .getOrElse(defaultValueSupplier);
     }
     //#endregion
-    //#region single*
-    waitForSingleOrElse(defaultValueSupplier) {
+    //#region waitForFirst*
+    waitForSingleOptional() {
         let result = this.next();
         if (result.done) {
-            return defaultValueSupplier();
+            return Optional.empty();
         }
         const element = result.element;
         result = this.next();
         if (result.done) {
-            return element;
+            return Optional.of(element);
         }
         throw new Error("Multiple elements in sequence");
     }
-    waitForSingleOrDefault(defaultValue) {
-        return this.waitForSingleOrElse(() => (defaultValue));
-    }
     waitForSingle() {
-        return this.waitForSingleOrElse(() => { throw new Error("Empty sequence"); });
+        return this.waitForSingleOptional()
+            .getOrThrow(() => new Error("Empty sequence"));
     }
-    waitForSingleOrNull() {
-        return this.waitForSingleOrDefault(null);
+    waitForSingleOrDefault(defaultValue) {
+        return this.waitForSingleOptional()
+            .getOrDefault(defaultValue);
     }
-    waitForSingleOrUndefined() {
-        return this.waitForSingleOrDefault(undefined);
+    waitForSingleOrElse(defaultValueSupplier) {
+        return this.waitForSingleOptional()
+            .getOrElse(defaultValueSupplier);
     }
     //#endregion
     //#endregion
@@ -335,11 +335,11 @@ class MergedSequence extends Sequence {
     constructor(sequencesSequence) {
         super();
         this.sequencesSequence = sequencesSequence;
-        _MergedSequence_currentSequence.set(this, null);
+        _MergedSequence_currentSequence.set(this, Optional.empty());
     }
     next() {
-        if (__classPrivateFieldGet(this, _MergedSequence_currentSequence, "f") instanceof Sequence) {
-            const result = __classPrivateFieldGet(this, _MergedSequence_currentSequence, "f").next();
+        if (__classPrivateFieldGet(this, _MergedSequence_currentSequence, "f").isPresent()) {
+            const result = __classPrivateFieldGet(this, _MergedSequence_currentSequence, "f").value.next();
             if (!(result.done)) {
                 return result;
             }
@@ -348,7 +348,7 @@ class MergedSequence extends Sequence {
         if (result.done) {
             return result;
         }
-        __classPrivateFieldSet(this, _MergedSequence_currentSequence, result.element, "f");
+        __classPrivateFieldSet(this, _MergedSequence_currentSequence, Optional.of(result.element), "f");
         return this.next();
     }
     getAttributes() {
@@ -396,11 +396,11 @@ class FlatMappedSequence extends SequenceWithSource {
     constructor(source, mapper) {
         super(source);
         this.mapper = mapper;
-        _FlatMappedSequence_currentSequence.set(this, null);
+        _FlatMappedSequence_currentSequence.set(this, Optional.empty());
     }
     next() {
-        if (__classPrivateFieldGet(this, _FlatMappedSequence_currentSequence, "f") instanceof Sequence) {
-            const result = __classPrivateFieldGet(this, _FlatMappedSequence_currentSequence, "f").next();
+        if (__classPrivateFieldGet(this, _FlatMappedSequence_currentSequence, "f").isPresent()) {
+            const result = __classPrivateFieldGet(this, _FlatMappedSequence_currentSequence, "f").value.next();
             if (!(result.done)) {
                 return result;
             }
@@ -409,7 +409,7 @@ class FlatMappedSequence extends SequenceWithSource {
         if (sourceResult.done) {
             return sourceResult;
         }
-        __classPrivateFieldSet(this, _FlatMappedSequence_currentSequence, this.mapper(sourceResult.element), "f");
+        __classPrivateFieldSet(this, _FlatMappedSequence_currentSequence, Optional.of(this.mapper(sourceResult.element)), "f");
         return this.next();
     }
 }
@@ -417,11 +417,11 @@ _FlatMappedSequence_currentSequence = new WeakMap();
 class FlattenedSequence extends SequenceWithSource {
     constructor(source) {
         super(source);
-        _FlattenedSequence_currentSequence.set(this, null);
+        _FlattenedSequence_currentSequence.set(this, Optional.empty());
     }
     next() {
-        if (__classPrivateFieldGet(this, _FlattenedSequence_currentSequence, "f") instanceof Sequence) {
-            const result = __classPrivateFieldGet(this, _FlattenedSequence_currentSequence, "f").next();
+        if (__classPrivateFieldGet(this, _FlattenedSequence_currentSequence, "f").isPresent()) {
+            const result = __classPrivateFieldGet(this, _FlattenedSequence_currentSequence, "f").value.next();
             if (!(result.done)) {
                 return result;
             }
@@ -430,7 +430,7 @@ class FlattenedSequence extends SequenceWithSource {
         if (sourceResult.done) {
             return sourceResult;
         }
-        __classPrivateFieldSet(this, _FlattenedSequence_currentSequence, sourceResult.element, "f");
+        __classPrivateFieldSet(this, _FlattenedSequence_currentSequence, Optional.of(sourceResult.element), "f");
         return this.next();
     }
 }

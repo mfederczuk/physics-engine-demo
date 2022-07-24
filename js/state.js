@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: MPL-2.0 AND Apache-2.0
  */
 class State {
-    constructor() {
+    constructor(initialSubjectInputSource) {
         // TODO: move these into a separate `StateConfig` object?
         this.gravity = new Vector2D(0, 0.5);
         this.defaultEntityManualMovementSpeed = 1;
@@ -14,7 +14,7 @@ class State {
         this.bounds = new Box2D(0, 0, 0, 0);
         this.entities = new EntityCollection();
         this.subject = this
-            .addNewEntity("Subject", new Box2D(0, 0, State.SUBJECT_SIZE), 50)
+            .addNewEntity(State.INITIAL_SUBJECT_NAME, new Box2D(0, 0, State.INITIAL_SUBJECT_SIZE), State.INITIAL_SUBJECT_MASS, undefined, undefined, undefined, initialSubjectInputSource)
             .entity;
     }
     /**
@@ -23,12 +23,12 @@ class State {
      * Note: This method does *not* add the new entity to the entity collection! If you want that to happen, use
      * `addNewEntity`.
      */
-    newEntity(name, boundingBox, mass, manualMovementSpeed = this.defaultEntityManualMovementSpeed, jumpSpeed = this.defaultEntityJumpSpeed, noclipFlySpeed = this.defaultEntityNoclipFlySpeed, controller = new DummyController()) {
-        return new Entity(name, boundingBox, mass, manualMovementSpeed, jumpSpeed, noclipFlySpeed, controller);
+    newEntity(name, boundingBox, mass, manualMovementSpeed = this.defaultEntityManualMovementSpeed, jumpSpeed = this.defaultEntityJumpSpeed, noclipFlySpeed = this.defaultEntityNoclipFlySpeed, inputSource) {
+        return new Entity(name, boundingBox, mass, manualMovementSpeed, jumpSpeed, noclipFlySpeed, inputSource);
     }
-    addNewEntity(name, boundingBox, mass, manualMovementSpeed = this.defaultEntityManualMovementSpeed, jumpSpeed = this.defaultEntityJumpSpeed, noclipFlySpeed = this.defaultEntityNoclipFlySpeed, controller = new DummyController()) {
+    addNewEntity(name, boundingBox, mass, manualMovementSpeed, jumpSpeed, noclipFlySpeed, inputSource) {
         const entity = this
-            .newEntity(name, boundingBox, mass, manualMovementSpeed, jumpSpeed, noclipFlySpeed, controller);
+            .newEntity(name, boundingBox, mass, manualMovementSpeed, jumpSpeed, noclipFlySpeed, inputSource);
         const id = this.entities.add(entity);
         return { id, entity };
     }
@@ -43,21 +43,23 @@ class State {
             (testBox.computeYEnd() > this.bounds.computeYEnd()));
     }
 }
-State.SUBJECT_SIZE = 75;
+State.INITIAL_SUBJECT_NAME = "Subject";
+State.INITIAL_SUBJECT_SIZE = 75;
+State.INITIAL_SUBJECT_MASS = 50;
 function updateEntity(state, entity) {
     if (entity.noclip) {
         let noclipXd = 0;
         let noclipYd = 0;
-        if (entity.controller.upActive()) {
+        if (entity.inputManager.queryIfActive(InputActionType.UP)) {
             noclipYd -= entity.noclipFlySpeed;
         }
-        if (entity.controller.downActive()) {
+        if (entity.inputManager.queryIfActive(InputActionType.DOWN)) {
             noclipYd += entity.noclipFlySpeed;
         }
-        if (entity.controller.leftActive()) {
+        if (entity.inputManager.queryIfActive(InputActionType.LEFT)) {
             noclipXd -= entity.noclipFlySpeed;
         }
-        if (entity.controller.rightActive()) {
+        if (entity.inputManager.queryIfActive(InputActionType.RIGHT)) {
             noclipXd += entity.noclipFlySpeed;
         }
         entity.forces.markAllAsRemoved();
@@ -74,15 +76,16 @@ function updateEntity(state, entity) {
         const entityNetForceDirection = entity.forces
             .computeNetForce()
             .computeDirection();
-        if (entity.controller.leftActive()) {
+        if (entity.inputManager.queryIfActive(InputActionType.LEFT)) {
             const leftForce = Vector2D.ofMagnitudeAndDirection(entity.manualMovementSpeed, entityNetForceDirection - 90);
             entity.forces.put(ForceType.LEFT, leftForce);
         }
-        if (entity.controller.rightActive()) {
+        if (entity.inputManager.queryIfActive(InputActionType.RIGHT)) {
             const rightForce = Vector2D.ofMagnitudeAndDirection(entity.manualMovementSpeed, entityNetForceDirection + 90);
             entity.forces.put(ForceType.RIGHT, rightForce);
         }
-        if (entity.controller.jumpActive()) {
+        if (entity.inputManager.queryIfActive(InputActionType.JUMP)) {
+            entity.inputManager.reset(InputActionType.JUMP);
             const jumpForce = Vector2D.ofMagnitudeAndDirection(entity.jumpSpeed, entityNetForceDirection + 180);
             entity.forces.put(ForceType.JUMP, jumpForce);
         }

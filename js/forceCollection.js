@@ -49,9 +49,9 @@ class ForceCollection {
     //#endregion
     //#region blocking
     block(type, reason) {
-        const types = __classPrivateFieldGet(this, _ForceCollection_blocks, "f").get(reason);
-        if (types instanceof Set) {
-            types.add(type);
+        const typeSetOptional = Optional.ofNullable(__classPrivateFieldGet(this, _ForceCollection_blocks, "f").get(reason));
+        if (typeSetOptional.isPresent()) {
+            typeSetOptional.value.add(type);
             return;
         }
         __classPrivateFieldGet(this, _ForceCollection_blocks, "f").set(reason, new Set([type]));
@@ -74,37 +74,37 @@ class ForceCollection {
     }
     //#endregion
     //#region queries
-    getOrElse(type, defaultValueSupplier) {
-        const obj = __classPrivateFieldGet(this, _ForceCollection_forceMap, "f").get(type);
-        if ((typeof (obj) !== "object") || obj.markedAsRemoved) {
-            return defaultValueSupplier(type);
-        }
-        for (const blockedTypes of __classPrivateFieldGet(this, _ForceCollection_blocks, "f").values()) {
-            if (blockedTypes.has(type)) {
-                return defaultValueSupplier(type);
+    getOptional(type) {
+        return Optional.ofNullable(__classPrivateFieldGet(this, _ForceCollection_forceMap, "f").get(type))
+            .filterOut(({ markedAsRemoved }) => (markedAsRemoved))
+            .filter(() => {
+            for (const blockedTypes of __classPrivateFieldGet(this, _ForceCollection_blocks, "f").values()) {
+                if (blockedTypes.has(type)) {
+                    return false;
+                }
             }
-        }
-        return obj.force;
+            return true;
+        })
+            .map(({ force }) => (force));
     }
     get(type) {
-        return this
-            .getOrElse(type, () => { throw Error(`No such force with type: ${type}`); });
+        return this.getOptional(type)
+            .getOrThrow(() => new Error(`No such force with type ${type.quote()}`));
     }
     getOrDefault(type, defaultValue) {
-        return this.getOrElse(type, () => (defaultValue));
+        return this.getOptional(type)
+            .getOrDefault(defaultValue);
     }
-    getOrNull(type) {
-        return this.getOrDefault(type, null);
-    }
-    getOrUndefined(type) {
-        return this.getOrDefault(type, undefined);
+    getOrElse(type, defaultValueSupplier) {
+        return this.getOptional(type)
+            .getOrElse(defaultValueSupplier);
     }
     contains(type) {
-        return (this.getOrNull(type) !== null);
+        return this.getOptional(type).isPresent();
     }
     //#endregion
     //#region iteration
-    forcesSequence() {
+    sequence() {
         const allBlockedTypes = new Set();
         for (const blockedTypes of __classPrivateFieldGet(this, _ForceCollection_blocks, "f").values()) {
             for (const blockedType of blockedTypes) {
@@ -138,9 +138,8 @@ class ForceCollection {
     }
 }
 _ForceCollection_forceMap = new WeakMap(), _ForceCollection_blocks = new WeakMap(), _ForceCollection_instances = new WeakSet(), _ForceCollection_markOneAsRemoved = function _ForceCollection_markOneAsRemoved(type) {
-    const obj = __classPrivateFieldGet(this, _ForceCollection_forceMap, "f").get(type);
-    if (typeof (obj) !== "object") {
-        return;
-    }
-    obj.markedAsRemoved = true;
+    Optional.ofNullable(__classPrivateFieldGet(this, _ForceCollection_forceMap, "f").get(type))
+        .ifPresent((obj) => {
+        obj.markedAsRemoved = true;
+    });
 };

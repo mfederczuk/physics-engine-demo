@@ -5,20 +5,15 @@
  */
 const CONTROLS_GUIDE_ACTIVE_CLASS_NAME = "controls-guide-active";
 // global state so that it can be manipulated using the browser console
-const state = new State();
-state.subject.controller = new WebKeyboardController(window);
-state.addNewEntity("Burt", new Box2D(0, 0, 100, 65), 5, undefined, undefined, undefined, new RandomController());
-state.addNewEntity("Mark", new Box2D(0, 0, 50), 5, undefined, undefined, undefined, new RandomController());
-state.addNewEntity("Wug", new Box2D(0, 0, 30, 125), 5, undefined, undefined, undefined, new RandomController());
+const state = new State(new DeviceInputSource(new WebKeyboard(window), new SimpleKeyInputMap()));
+state.addNewEntity("Burt", new Box2D(0, 0, 100, 65), 5, undefined, undefined, undefined, new RandomInputSource());
+state.addNewEntity("Mark", new Box2D(0, 0, 50), 5, undefined, undefined, undefined, new RandomInputSource());
+state.addNewEntity("Wug", new Box2D(0, 0, 30, 125), 5, undefined, undefined, undefined, new RandomInputSource());
 window.onload = () => {
-    const normalControlsGuide = document.getElementById("normal-controls-guide");
-    const noclipControlsGuide = document.getElementById("noclip-controls-guide");
-    if (normalControlsGuide === null) {
-        error("Normal controls guide table (#normal-controls-guide) not found");
-    }
-    if (noclipControlsGuide === null) {
-        error("Noclip controls guide table (#noclip-controls-guide) not found");
-    }
+    const normalControlsGuide = Optional.ofNullable(document.getElementById("normal-controls-guide"))
+        .getOrThrow(() => new Error("Normal controls guide table (#normal-controls-guide) not found"));
+    const noclipControlsGuide = Optional.ofNullable(document.getElementById("noclip-controls-guide"))
+        .getOrThrow(() => new Error("Noclip controls guide table (#noclip-controls-guide) not found"));
     const [canvas, context] = initCanvas();
     const adjustBounds = () => {
         state.bounds.width = (canvas.width = canvas.offsetWidth);
@@ -43,19 +38,21 @@ window.onload = () => {
     };
     normalControlsGuide.onanimationend = () => normalControlsGuide.classList.remove(CONTROLS_GUIDE_ACTIVE_CLASS_NAME);
     noclipControlsGuide.onanimationend = () => noclipControlsGuide.classList.remove(CONTROLS_GUIDE_ACTIVE_CLASS_NAME);
-    state.subject.addNoclipChangeListener({ invokeImmediately: true }, (noclip) => {
-        if (!(state.subject.controller instanceof WebKeyboardController)) {
+    state.subject.noclipObservable().subscribe({
+        onNext: (noclip) => {
             normalControlsGuide.classList.remove(CONTROLS_GUIDE_ACTIVE_CLASS_NAME);
             noclipControlsGuide.classList.remove(CONTROLS_GUIDE_ACTIVE_CLASS_NAME);
-            return;
-        }
-        if (!noclip) {
-            normalControlsGuide.classList.add(CONTROLS_GUIDE_ACTIVE_CLASS_NAME);
-            noclipControlsGuide.classList.remove(CONTROLS_GUIDE_ACTIVE_CLASS_NAME);
-        }
-        else {
-            normalControlsGuide.classList.remove(CONTROLS_GUIDE_ACTIVE_CLASS_NAME);
-            noclipControlsGuide.classList.add(CONTROLS_GUIDE_ACTIVE_CLASS_NAME);
+            const inputSource = state.subject.inputManager.getInputSource();
+            if (!(inputSource instanceof DeviceInputSource) ||
+                !(inputSource.getDevice() instanceof Keyboard)) {
+                return;
+            }
+            const inputMap = inputSource.getMap();
+            if (!(inputMap instanceof SimpleKeyInputMap)) {
+                return;
+            }
+            // FIXME: inputMap.keyMap needs to influence which key images are displayed
+            ((!noclip) ? normalControlsGuide : normalControlsGuide).classList.add(CONTROLS_GUIDE_ACTIVE_CLASS_NAME);
         }
     });
     window.requestAnimationFrame(() => {

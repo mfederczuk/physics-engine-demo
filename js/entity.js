@@ -15,9 +15,8 @@ var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (
     return (kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value)), value;
 };
 var _Entity_noclip, _EntityCollection_entityMap, _EntityCollection_nextId;
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 class Entity {
-    constructor(name, boundingBox, mass, manualMovementSpeed, jumpSpeed, noclipFlySpeed, controller = new DummyController()) {
+    constructor(name, boundingBox, mass, manualMovementSpeed, jumpSpeed, noclipFlySpeed, inputSource = new DummyInputSource()) {
         this.velocity = new Vector2D();
         this.forces = new ForceCollection();
         _Entity_noclip.set(this, new ObservableValue(false));
@@ -27,7 +26,7 @@ class Entity {
         this.manualMovementSpeed = manualMovementSpeed;
         this.jumpSpeed = jumpSpeed;
         this.noclipFlySpeed = noclipFlySpeed;
-        this.controller = controller;
+        this.inputManager = new InputManager(inputSource);
     }
     get noclip() {
         return __classPrivateFieldGet(this, _Entity_noclip, "f").get();
@@ -38,11 +37,8 @@ class Entity {
     toggleNoclip() {
         this.noclip = !(this.noclip);
     }
-    addNoclipChangeListener(...args) {
-        __classPrivateFieldGet(this, _Entity_noclip, "f").addListener(...args);
-    }
-    removeNoclipChangeListener(listener) {
-        __classPrivateFieldGet(this, _Entity_noclip, "f").removeListener(listener);
+    noclipObservable() {
+        return __classPrivateFieldGet(this, _Entity_noclip, "f").hide();
     }
 }
 _Entity_noclip = new WeakMap();
@@ -63,78 +59,71 @@ class EntityCollection {
         return id;
     }
     contains(entity) {
-        return (this.lookupIdOrNull(entity) !== null);
+        return this.lookupIdOptional(entity).isPresent();
     }
     //#region remove*
     removeById(id) {
         __classPrivateFieldGet(this, _EntityCollection_entityMap, "f").delete(id);
     }
     remove(entity) {
-        const id = this.lookupIdOrNull(entity);
-        if (typeof (id) !== "number") {
-            return;
-        }
-        this.removeById(id);
+        const id = this.lookupIdOptional(entity);
+        id.ifPresent(this.removeById.bind(this));
     }
     //#endregion
     //#region lookupId*
-    lookupIdOrElse(entity, defaultValueSupplier) {
+    lookupIdOptional(entity) {
         return this.sequence()
             .filter((entityWithId) => (entityWithId.entity === entity))
             .map(({ id }) => (id))
-            .waitForSingleOrElse(defaultValueSupplier);
-    }
-    lookupIdOrDefault(entity, defaultValue) {
-        return this.lookupIdOrElse(entity, () => (defaultValue));
+            .waitForSingleOptional();
     }
     lookupId(entity) {
-        return this.lookupIdOrElse(entity, () => { throw new Error(`No such entity ${entity}`); });
+        return this.lookupIdOptional(entity)
+            .getOrThrow(() => new Error(`No such entity ${entity}`));
     }
-    lookupIdOrNull(entity) {
-        return this.lookupIdOrDefault(entity, null);
+    lookupIdOrDefault(entity, defaultValue) {
+        return this.lookupIdOptional(entity)
+            .getOrDefault(defaultValue);
     }
-    lookupIdOrUndefined(entity) {
-        return this.lookupIdOrDefault(entity, undefined);
+    lookupIdOrElse(entity, defaultValueSupplier) {
+        return this.lookupIdOptional(entity)
+            .getOrElse(defaultValueSupplier);
     }
     //#endregion
     //#region getById*
-    getByIdOrElse(id, defaultValueSupplier) {
-        const entity = __classPrivateFieldGet(this, _EntityCollection_entityMap, "f").get(id);
-        if (entity instanceof Entity) {
-            return entity;
-        }
-        return defaultValueSupplier();
-    }
-    getByIdOrDefault(id, defaultValue) {
-        return this.getByIdOrElse(id, () => (defaultValue));
+    getByIdOptional(id) {
+        return Optional.ofNullable(__classPrivateFieldGet(this, _EntityCollection_entityMap, "f").get(id));
     }
     getById(id) {
-        return this.getByIdOrElse(id, () => { throw new Error(`No such entity with ID ${id}`); });
+        return this.getByIdOptional(id)
+            .getOrThrow(() => new Error(`No such entity with ID ${id}`));
     }
-    getByIdOrNull(id) {
-        return this.getByIdOrDefault(id, null);
+    getByIdOrDefault(id, defaultValue) {
+        return this.getByIdOptional(id)
+            .getOrDefault(defaultValue);
     }
-    getByIdOrUndefined(id) {
-        return this.getByIdOrDefault(id, undefined);
+    getByIdOrElse(id, defaultValueSupplier) {
+        return this.getByIdOptional(id)
+            .getOrElse(defaultValueSupplier);
     }
     //#endregion
     //#region findFirstByName*
-    findFirstByNameOrElse(name, defaultValueSupplier) {
+    findFirstByNameOptional(name) {
         return this.sequence()
             .filter(({ entity }) => (entity.name === name))
-            .waitForFirstOrElse(defaultValueSupplier);
-    }
-    findFirstByNameOrDefault(name, defaultValue) {
-        return this.findFirstByNameOrElse(name, () => (defaultValue));
+            .waitForFirstOptional();
     }
     findFirstByName(name) {
-        return this.findFirstByNameOrElse(name, () => { throw new Error(`No such entity with name "${name}"`); });
+        return this.findFirstByNameOptional(name)
+            .getOrThrow(() => new Error(`No such entity with name ${name.quote()}`));
     }
-    findFirstByNameOrNull(name) {
-        return this.findFirstByNameOrDefault(name, null);
+    findFirstByNameOrDefault(name, defaultValue) {
+        return this.findFirstByNameOptional(name)
+            .getOrDefault(defaultValue);
     }
-    findFirstByNameOrUndefined(name) {
-        return this.findFirstByNameOrDefault(name, undefined);
+    findFirstByNameOrElse(name, defaultValueSupplier) {
+        return this.findFirstByNameOptional(name)
+            .getOrElse(defaultValueSupplier);
     }
     //#endregion
     sequence() {
