@@ -1,0 +1,38 @@
+/'
+ ' Copyright (c) 2022 Michael Federczuk
+ ' SPDX-License-Identifier: CC-BY-SA-4.0
+ '/
+
+@startuml input-management-system-diagram
+
+hide empty members
+
+
+abstract class InputSource
+class InputManager
+
+InputSource o-- InputManager
+
+
+class RandomInputSource
+InputSource <|-left- RandomInputSource
+
+
+abstract class InputDevice
+abstract class InputMap
+
+class DeviceInputSource
+
+InputSource <|-right- DeviceInputSource
+InputDevice o---- DeviceInputSource
+InputMap o---- DeviceInputSource
+
+
+class SimpleKeyInputMap extends InputMap
+
+
+class Keyboard extends InputDevice
+
+class WebKeyboard extends Keyboard
+
+@enduml

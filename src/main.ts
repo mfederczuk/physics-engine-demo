@@ -9,11 +9,16 @@ const CONTROLS_GUIDE_ACTIVE_CLASS_NAME = "controls-guide-active";
 // global state so that it can be manipulated using the browser console
 const state = new State();
 
-state.subject.controller = new WebKeyboardController(window);
+state.subject.inputManager.setInputSource(
+	new DeviceInputSource(
+		new WebKeyboard(window),
+		new SimpleKeyInputMap(),
+	)
+);
 
-state.addNewEntity("Burt", new Box2D(0, 0, 100, 65), 5, undefined, undefined, undefined, new RandomController());
-state.addNewEntity("Mark", new Box2D(0, 0, 50     ), 5, undefined, undefined, undefined, new RandomController());
-state.addNewEntity("Wug",  new Box2D(0, 0, 30, 125), 5, undefined, undefined, undefined, new RandomController());
+state.addNewEntity("Burt", new Box2D(0, 0, 100, 65), 5, undefined, undefined, undefined, new RandomInputSource());
+state.addNewEntity("Mark", new Box2D(0, 0, 50     ), 5, undefined, undefined, undefined, new RandomInputSource());
+state.addNewEntity("Wug",  new Box2D(0, 0, 30, 125), 5, undefined, undefined, undefined, new RandomInputSource());
 
 
 window.onload = () => {
@@ -61,19 +66,25 @@ window.onload = () => {
 
 	state.subject.noclipObservable().subscribe({
 		onNext: (noclip: boolean) => {
-			if(!(state.subject.controller instanceof WebKeyboardController)) {
-				normalControlsGuide.classList.remove(CONTROLS_GUIDE_ACTIVE_CLASS_NAME);
-				noclipControlsGuide.classList.remove(CONTROLS_GUIDE_ACTIVE_CLASS_NAME);
+			normalControlsGuide.classList.remove(CONTROLS_GUIDE_ACTIVE_CLASS_NAME);
+			noclipControlsGuide.classList.remove(CONTROLS_GUIDE_ACTIVE_CLASS_NAME);
+
+			const inputSource: InputSource = state.subject.inputManager.getInputSource();
+
+			if(!(inputSource instanceof DeviceInputSource) ||
+			   !(inputSource.getDevice() instanceof Keyboard)) {
+
 				return;
 			}
 
-			if(!noclip) {
-				normalControlsGuide.classList.add(CONTROLS_GUIDE_ACTIVE_CLASS_NAME);
-				noclipControlsGuide.classList.remove(CONTROLS_GUIDE_ACTIVE_CLASS_NAME);
-			} else {
-				normalControlsGuide.classList.remove(CONTROLS_GUIDE_ACTIVE_CLASS_NAME);
-				noclipControlsGuide.classList.add(CONTROLS_GUIDE_ACTIVE_CLASS_NAME);
+			const inputMap: InputMap<NotNullable> = inputSource.getMap();
+
+			if(!(inputMap instanceof SimpleKeyInputMap)) {
+				return;
 			}
+
+			// FIXME: inputMap.keyMap needs to influence which key images are displayed
+			((!noclip) ? normalControlsGuide : normalControlsGuide).classList.add(CONTROLS_GUIDE_ACTIVE_CLASS_NAME);
 		}
 	});
 

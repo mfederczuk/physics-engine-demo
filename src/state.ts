@@ -41,7 +41,7 @@ class State {
 		jumpSpeed: number = this.defaultEntityJumpSpeed,
 		noclipFlySpeed: number = this.defaultEntityNoclipFlySpeed,
 
-		controller: Controller = new DummyController(),
+		inputSource?: InputSource,
 	): Entity {
 		return new Entity(
 			name,
@@ -51,7 +51,7 @@ class State {
 			jumpSpeed,
 			noclipFlySpeed,
 
-			controller,
+			inputSource,
 		);
 	}
 
@@ -63,7 +63,7 @@ class State {
 		jumpSpeed: number = this.defaultEntityJumpSpeed,
 		noclipFlySpeed: number = this.defaultEntityNoclipFlySpeed,
 
-		controller: Controller = new DummyController(),
+		inputSource?: InputSource,
 	): EntityWithId {
 		const entity: Entity = this
 			.newEntity(
@@ -74,7 +74,7 @@ class State {
 				jumpSpeed,
 				noclipFlySpeed,
 
-				controller,
+				inputSource,
 			);
 
 		const id: number = this.entities.add(entity);
@@ -101,19 +101,19 @@ function updateEntity(state: State, entity: Entity) {
 		let noclipXd = 0;
 		let noclipYd = 0;
 
-		if(entity.controller.upActive()) {
+		if(entity.inputManager.queryIfActive(InputActionType.UP)) {
 			noclipYd -= entity.noclipFlySpeed;
 		}
 
-		if(entity.controller.downActive()) {
+		if(entity.inputManager.queryIfActive(InputActionType.DOWN)) {
 			noclipYd += entity.noclipFlySpeed;
 		}
 
-		if(entity.controller.leftActive()) {
+		if(entity.inputManager.queryIfActive(InputActionType.LEFT)) {
 			noclipXd -= entity.noclipFlySpeed;
 		}
 
-		if(entity.controller.rightActive()) {
+		if(entity.inputManager.queryIfActive(InputActionType.RIGHT)) {
 			noclipXd += entity.noclipFlySpeed;
 		}
 
@@ -138,7 +138,7 @@ function updateEntity(state: State, entity: Entity) {
 			.computeNetForce()
 			.computeDirection();
 
-		if(entity.controller.leftActive()) {
+		if(entity.inputManager.queryIfActive(InputActionType.LEFT)) {
 			const leftForce: Vector2D =
 				Vector2D.ofMagnitudeAndDirection(
 					entity.manualMovementSpeed,
@@ -148,7 +148,7 @@ function updateEntity(state: State, entity: Entity) {
 			entity.forces.put(ForceType.LEFT, leftForce);
 		}
 
-		if(entity.controller.rightActive()) {
+		if(entity.inputManager.queryIfActive(InputActionType.RIGHT)) {
 			const rightForce: Vector2D =
 				Vector2D.ofMagnitudeAndDirection(
 					entity.manualMovementSpeed,
@@ -158,7 +158,9 @@ function updateEntity(state: State, entity: Entity) {
 			entity.forces.put(ForceType.RIGHT, rightForce);
 		}
 
-		if(entity.controller.jumpActive()) {
+		if(entity.inputManager.queryIfActive(InputActionType.JUMP)) {
+			entity.inputManager.reset(InputActionType.JUMP);
+
 			const jumpForce: Vector2D =
 				Vector2D.ofMagnitudeAndDirection(
 					entity.jumpSpeed,

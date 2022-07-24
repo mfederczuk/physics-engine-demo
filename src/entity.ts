@@ -13,7 +13,7 @@ class Entity {
 	         jumpSpeed:           number;
 	         noclipFlySpeed:      number;
 
-	controller: Controller;
+	readonly inputManager: InputManager;
 
 	readonly velocity: Vector2D                 = new Vector2D();
 	readonly forces:   ForceCollection          = new ForceCollection();
@@ -27,7 +27,7 @@ class Entity {
 		jumpSpeed: number,
 		noclipFlySpeed: number,
 
-		controller: Controller = new DummyController(),
+		inputSource: InputSource = new DummyInputSource(),
 	) {
 		this.name                = name;
 		this.boundingBox         = boundingBox;
@@ -36,7 +36,7 @@ class Entity {
 		this.jumpSpeed           = jumpSpeed;
 		this.noclipFlySpeed      = noclipFlySpeed;
 
-		this.controller = controller;
+		this.inputManager = new InputManager(inputSource);
 	}
 
 	get noclip(): boolean {
