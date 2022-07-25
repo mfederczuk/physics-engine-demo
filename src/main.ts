@@ -14,9 +14,9 @@ const state = new State(
 	)
 );
 
-state.addNewEntity("Burt", new Box2D(0, 0, 100, 65), 5, undefined, undefined, undefined, new RandomInputSource());
-state.addNewEntity("Mark", new Box2D(0, 0, 50     ), 5, undefined, undefined, undefined, new RandomInputSource());
-state.addNewEntity("Wug",  new Box2D(0, 0, 30, 125), 5, undefined, undefined, undefined, new RandomInputSource());
+state.addNewEntity({ name: "Burt", boundingBox: new Box2D(0, 0, 100, 65), mass: 5, inputSource: new RandomInputSource()});
+state.addNewEntity({ name: "Mark", boundingBox: new Box2D(0, 0, 50     ), mass: 5, inputSource: new RandomInputSource()});
+state.addNewEntity({ name: "Wug",  boundingBox: new Box2D(0, 0, 30, 125), mass: 5, inputSource: new RandomInputSource()});
 
 
 window.onload = () => {

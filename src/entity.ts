@@ -3,6 +3,17 @@
  * SPDX-License-Identifier: MPL-2.0 AND Apache-2.0
  */
 
+interface EntityArgs {
+	name:                string;
+	boundingBox:         Box2D;
+	mass:                number;
+	manualMovementSpeed: number;
+	jumpSpeed:           number;
+	noclipFlySpeed:      number;
+
+	inputSource?: InputSource;
+}
+
 class Entity {
 	         name:                string;
 	readonly boundingBox:         Box2D;
@@ -18,24 +29,15 @@ class Entity {
 	readonly forces:   ForceCollection          = new ForceCollection();
 	readonly #noclip:  ObservableValue<boolean> = new ObservableValue(false);
 
-	constructor(
-		name: string,
-		boundingBox: Box2D,
-		mass: number,
-		manualMovementSpeed: number,
-		jumpSpeed: number,
-		noclipFlySpeed: number,
+	constructor(args: Readonly<EntityArgs>) {
+		this.name                = args.name;
+		this.boundingBox         = args.boundingBox;
+		this.mass                = args.mass;
+		this.manualMovementSpeed = args.manualMovementSpeed;
+		this.jumpSpeed           = args.jumpSpeed;
+		this.noclipFlySpeed      = args.noclipFlySpeed;
 
-		inputSource: InputSource = new DummyInputSource(),
-	) {
-		this.name                = name;
-		this.boundingBox         = boundingBox;
-		this.mass                = mass;
-		this.manualMovementSpeed = manualMovementSpeed;
-		this.jumpSpeed           = jumpSpeed;
-		this.noclipFlySpeed      = noclipFlySpeed;
-
-		this.inputManager = new InputManager(inputSource);
+		this.inputManager = new InputManager(args.inputSource ?? new DummyInputSource());
 	}
 
 	get noclip(): boolean {

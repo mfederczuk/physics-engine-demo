@@ -3,6 +3,17 @@
  * SPDX-License-Identifier: MPL-2.0 AND Apache-2.0
  */
 
+interface StateEntityArgs {
+	name:                 string;
+	boundingBox:          Box2D;
+	mass:                 number;
+	manualMovementSpeed?: number;
+	jumpSpeed?:           number;
+	noclipFlySpeed?:      number;
+
+	inputSource?: InputSource;
+}
+
 class State {
 	static readonly INITIAL_SUBJECT_NAME = "Subject";
 	static readonly INITIAL_SUBJECT_SIZE = 75;
@@ -21,16 +32,13 @@ class State {
 
 	constructor(initialSubjectInputSource?: InputSource) {
 		this.subject = this
-			.addNewEntity(
-				State.INITIAL_SUBJECT_NAME,
-				new Box2D(0, 0, State.INITIAL_SUBJECT_SIZE),
-				State.INITIAL_SUBJECT_MASS,
-				undefined,
-				undefined,
-				undefined,
+			.addNewEntity({
+				name:        State.INITIAL_SUBJECT_NAME,
+				boundingBox: new Box2D(0, 0, State.INITIAL_SUBJECT_SIZE),
+				mass:        State.INITIAL_SUBJECT_MASS,
 
-				initialSubjectInputSource,
-			)
+				inputSource: initialSubjectInputSource,
+			})
 			.entity;
 	}
 
@@ -40,49 +48,21 @@ class State {
 	 * Note: This method does *not* add the new entity to the entity collection! If you want that to happen, use
 	 * `addNewEntity`.
 	 */
-	newEntity(
-		name: string,
-		boundingBox: Box2D,
-		mass: number,
-		manualMovementSpeed: number = this.defaultEntityManualMovementSpeed,
-		jumpSpeed: number = this.defaultEntityJumpSpeed,
-		noclipFlySpeed: number = this.defaultEntityNoclipFlySpeed,
+	newEntity(args: Readonly<StateEntityArgs>): Entity {
+		return new Entity({
+			name:                 args.name,
+			boundingBox:          args.boundingBox,
+			mass:                 args.mass,
+			manualMovementSpeed: (args.manualMovementSpeed ?? this.defaultEntityManualMovementSpeed),
+			jumpSpeed:           (args.jumpSpeed           ?? this.defaultEntityJumpSpeed),
+			noclipFlySpeed:      (args.noclipFlySpeed      ?? this.defaultEntityNoclipFlySpeed),
 
-		inputSource?: InputSource,
-	): Entity {
-		return new Entity(
-			name,
-			boundingBox,
-			mass,
-			manualMovementSpeed,
-			jumpSpeed,
-			noclipFlySpeed,
-
-			inputSource,
-		);
+			inputSource: args.inputSource,
+		});
 	}
 
-	addNewEntity(
-		name: string,
-		boundingBox: Box2D,
-		mass: number,
-		manualMovementSpeed?: number,
-		jumpSpeed?: number,
-		noclipFlySpeed?: number,
-
-		inputSource?: InputSource,
-	): EntityWithId {
-		const entity: Entity = this
-			.newEntity(
-				name,
-				boundingBox,
-				mass,
-				manualMovementSpeed,
-				jumpSpeed,
-				noclipFlySpeed,
-
-				inputSource,
-			);
+	addNewEntity(args: Readonly<StateEntityArgs>): EntityWithId {
+		const entity: Entity = this.newEntity(args);
 
 		const id: number = this.entities.add(entity);
 
