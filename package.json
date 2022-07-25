@@ -1,5 +1,16 @@
 {
 	"private": true,
+	"scripts": {
+		"build": "npm exec --package=typescript -- tsc",
+		"clean": "rm -rf js",
+		"rebuild": "npm run-script clean && npm run-script build",
+
+		"build-watch": "npm exec --package=typescript -- tsc --watch",
+
+		"lint": "npm exec --package=eslint -- eslint .",
+
+		"prepare-gh-pages-public-dir": "npm run-script rebuild && rm -rf public && mkdir public && cp -R css assets js index.html public"
+	},
 	"dependencies": {
 		"@typescript-eslint/eslint-plugin": "^5.30.6",
 		"@typescript-eslint/parser": "^5.30.6",

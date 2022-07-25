@@ -20,11 +20,8 @@ jobs:
       - name: Install NPM Packages
         run: npm ci
 
-      - name: Build JavaScript Files
-        run: npm exec --package=typescript -- tsc
-
-      - name: Setup 'public' dir
-        run: mkdir public && cp -r -- index.html css assets js public
+      - name: Build JavaScript Files & Setup 'public' Directory
+        run: npm run-script prepare-gh-pages-public-dir
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
