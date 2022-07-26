@@ -82,7 +82,7 @@ window.onload = () => {
 			}
 
 			// FIXME: inputMap.keyMap needs to influence which key images are displayed
-			((!noclip) ? normalControlsGuide : normalControlsGuide).classList.add(CONTROLS_GUIDE_ACTIVE_CLASS_NAME);
+			((!noclip) ? normalControlsGuide : noclipControlsGuide).classList.add(CONTROLS_GUIDE_ACTIVE_CLASS_NAME);
 		}
 	});
 
