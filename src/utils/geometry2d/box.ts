@@ -3,6 +3,13 @@
  * SPDX-License-Identifier: MPL-2.0 AND Apache-2.0
  */
 
+interface ReadonlyBox2D {
+	readonly x: number;
+	readonly y: number;
+	readonly width: number;
+	readonly height: number;
+}
+
 /**
  * A 2-dimensional box/rectangle.
  *
@@ -10,7 +17,8 @@
  * rotated.
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-class Box2D {
+class Box2D implements ReadonlyBox2D {
+
 	position: Position2D;
 	width: number;
 	height: number;
