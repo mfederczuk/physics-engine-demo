@@ -6,9 +6,9 @@
 const CONTROLS_GUIDE_ACTIVE_CLASS_NAME = "controls-guide-active";
 // global state so that it can be manipulated using the browser console
 const state = new State(new DeviceInputSource(new WebKeyboard(window), new SimpleKeyInputMap()));
-state.addNewEntity("Burt", new Box2D(0, 0, 100, 65), 5, undefined, undefined, undefined, new RandomInputSource());
-state.addNewEntity("Mark", new Box2D(0, 0, 50), 5, undefined, undefined, undefined, new RandomInputSource());
-state.addNewEntity("Wug", new Box2D(0, 0, 30, 125), 5, undefined, undefined, undefined, new RandomInputSource());
+state.addNewEntity({ name: "Burt", boundingBox: new Box2D(0, 0, 100, 65), mass: 5, inputSource: new RandomInputSource() });
+state.addNewEntity({ name: "Mark", boundingBox: new Box2D(0, 0, 50), mass: 5, inputSource: new RandomInputSource() });
+state.addNewEntity({ name: "Wug", boundingBox: new Box2D(0, 0, 30, 125), mass: 5, inputSource: new RandomInputSource() });
 window.onload = () => {
     const normalControlsGuide = Optional.ofNullable(document.getElementById("normal-controls-guide"))
         .getOrThrow(() => new Error("Normal controls guide table (#normal-controls-guide) not found"));
@@ -52,7 +52,7 @@ window.onload = () => {
                 return;
             }
             // FIXME: inputMap.keyMap needs to influence which key images are displayed
-            ((!noclip) ? normalControlsGuide : normalControlsGuide).classList.add(CONTROLS_GUIDE_ACTIVE_CLASS_NAME);
+            ((!noclip) ? normalControlsGuide : noclipControlsGuide).classList.add(CONTROLS_GUIDE_ACTIVE_CLASS_NAME);
         }
     });
     window.requestAnimationFrame(() => {

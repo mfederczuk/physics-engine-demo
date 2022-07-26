@@ -14,7 +14,12 @@ class State {
         this.bounds = new Box2D(0, 0, 0, 0);
         this.entities = new EntityCollection();
         this.subject = this
-            .addNewEntity(State.INITIAL_SUBJECT_NAME, new Box2D(0, 0, State.INITIAL_SUBJECT_SIZE), State.INITIAL_SUBJECT_MASS, undefined, undefined, undefined, initialSubjectInputSource)
+            .addNewEntity({
+            name: State.INITIAL_SUBJECT_NAME,
+            boundingBox: new Box2D(0, 0, State.INITIAL_SUBJECT_SIZE),
+            mass: State.INITIAL_SUBJECT_MASS,
+            inputSource: initialSubjectInputSource,
+        })
             .entity;
     }
     /**
@@ -23,12 +28,20 @@ class State {
      * Note: This method does *not* add the new entity to the entity collection! If you want that to happen, use
      * `addNewEntity`.
      */
-    newEntity(name, boundingBox, mass, manualMovementSpeed = this.defaultEntityManualMovementSpeed, jumpSpeed = this.defaultEntityJumpSpeed, noclipFlySpeed = this.defaultEntityNoclipFlySpeed, inputSource) {
-        return new Entity(name, boundingBox, mass, manualMovementSpeed, jumpSpeed, noclipFlySpeed, inputSource);
+    newEntity(args) {
+        var _a, _b, _c;
+        return new Entity({
+            name: args.name,
+            boundingBox: args.boundingBox,
+            mass: args.mass,
+            manualMovementSpeed: ((_a = args.manualMovementSpeed) !== null && _a !== void 0 ? _a : this.defaultEntityManualMovementSpeed),
+            jumpSpeed: ((_b = args.jumpSpeed) !== null && _b !== void 0 ? _b : this.defaultEntityJumpSpeed),
+            noclipFlySpeed: ((_c = args.noclipFlySpeed) !== null && _c !== void 0 ? _c : this.defaultEntityNoclipFlySpeed),
+            inputSource: args.inputSource,
+        });
     }
-    addNewEntity(name, boundingBox, mass, manualMovementSpeed, jumpSpeed, noclipFlySpeed, inputSource) {
-        const entity = this
-            .newEntity(name, boundingBox, mass, manualMovementSpeed, jumpSpeed, noclipFlySpeed, inputSource);
+    addNewEntity(args) {
+        const entity = this.newEntity(args);
         const id = this.entities.add(entity);
         return { id, entity };
     }
@@ -48,24 +61,22 @@ State.INITIAL_SUBJECT_SIZE = 75;
 State.INITIAL_SUBJECT_MASS = 50;
 function updateEntity(state, entity) {
     if (entity.noclip) {
-        let noclipXd = 0;
-        let noclipYd = 0;
-        if (entity.inputManager.queryIfActive(InputActionType.UP)) {
-            noclipYd -= entity.noclipFlySpeed;
-        }
-        if (entity.inputManager.queryIfActive(InputActionType.DOWN)) {
-            noclipYd += entity.noclipFlySpeed;
-        }
-        if (entity.inputManager.queryIfActive(InputActionType.LEFT)) {
-            noclipXd -= entity.noclipFlySpeed;
-        }
-        if (entity.inputManager.queryIfActive(InputActionType.RIGHT)) {
-            noclipXd += entity.noclipFlySpeed;
-        }
         entity.forces.markAllAsRemoved();
         entity.velocity.setZero();
-        entity.boundingBox.position.x += noclipXd;
-        entity.boundingBox.position.y += noclipYd;
+        if (entity.inputManager.queryIfActive(InputActionType.UP)) {
+            entity.velocity.yd -= entity.noclipFlySpeed;
+        }
+        if (entity.inputManager.queryIfActive(InputActionType.DOWN)) {
+            entity.velocity.yd += entity.noclipFlySpeed;
+        }
+        if (entity.inputManager.queryIfActive(InputActionType.LEFT)) {
+            entity.velocity.xd -= entity.noclipFlySpeed;
+        }
+        if (entity.inputManager.queryIfActive(InputActionType.RIGHT)) {
+            entity.velocity.xd += entity.noclipFlySpeed;
+        }
+        entity.boundingBox.position.x += entity.velocity.xd;
+        entity.boundingBox.position.y += entity.velocity.yd;
         return;
     }
     entity.forces.put(ForceType.GRAVITY, state.gravity);

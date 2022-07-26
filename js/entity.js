@@ -16,17 +16,18 @@ var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (
 };
 var _Entity_noclip, _EntityCollection_entityMap, _EntityCollection_nextId;
 class Entity {
-    constructor(name, boundingBox, mass, manualMovementSpeed, jumpSpeed, noclipFlySpeed, inputSource = new DummyInputSource()) {
+    constructor(args) {
+        var _a;
         this.velocity = new Vector2D();
         this.forces = new ForceCollection();
         _Entity_noclip.set(this, new ObservableValue(false));
-        this.name = name;
-        this.boundingBox = boundingBox;
-        this.mass = mass;
-        this.manualMovementSpeed = manualMovementSpeed;
-        this.jumpSpeed = jumpSpeed;
-        this.noclipFlySpeed = noclipFlySpeed;
-        this.inputManager = new InputManager(inputSource);
+        this.name = args.name;
+        this.boundingBox = args.boundingBox;
+        this.mass = args.mass;
+        this.manualMovementSpeed = args.manualMovementSpeed;
+        this.jumpSpeed = args.jumpSpeed;
+        this.noclipFlySpeed = args.noclipFlySpeed;
+        this.inputManager = new InputManager((_a = args.inputSource) !== null && _a !== void 0 ? _a : new DummyInputSource());
     }
     get noclip() {
         return __classPrivateFieldGet(this, _Entity_noclip, "f").get();
