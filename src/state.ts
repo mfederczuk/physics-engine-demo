@@ -85,30 +85,27 @@ class State {
 
 function updateEntity(state: State, entity: Entity) {
 	if(entity.noclip) {
-		let noclipXd = 0;
-		let noclipYd = 0;
-
-		if(entity.inputManager.queryIfActive(InputActionType.UP)) {
-			noclipYd -= entity.noclipFlySpeed;
-		}
-
-		if(entity.inputManager.queryIfActive(InputActionType.DOWN)) {
-			noclipYd += entity.noclipFlySpeed;
-		}
-
-		if(entity.inputManager.queryIfActive(InputActionType.LEFT)) {
-			noclipXd -= entity.noclipFlySpeed;
-		}
-
-		if(entity.inputManager.queryIfActive(InputActionType.RIGHT)) {
-			noclipXd += entity.noclipFlySpeed;
-		}
-
 		entity.forces.markAllAsRemoved();
 		entity.velocity.setZero();
 
-		entity.boundingBox.position.x += noclipXd;
-		entity.boundingBox.position.y += noclipYd;
+		if(entity.inputManager.queryIfActive(InputActionType.UP)) {
+			entity.velocity.yd -= entity.noclipFlySpeed;
+		}
+
+		if(entity.inputManager.queryIfActive(InputActionType.DOWN)) {
+			entity.velocity.yd += entity.noclipFlySpeed;
+		}
+
+		if(entity.inputManager.queryIfActive(InputActionType.LEFT)) {
+			entity.velocity.xd -= entity.noclipFlySpeed;
+		}
+
+		if(entity.inputManager.queryIfActive(InputActionType.RIGHT)) {
+			entity.velocity.xd += entity.noclipFlySpeed;
+		}
+
+		entity.boundingBox.position.x += entity.velocity.xd;
+		entity.boundingBox.position.y += entity.velocity.yd;
 
 		return;
 	}
